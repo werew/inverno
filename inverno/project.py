@@ -38,12 +38,50 @@ class Project:
 
         for entry in config["transactions"]:
             loader = entry["format"]
-            if loader == "schwab":
+            if loader == "standard":
+                transactions.extend(
+                    self._load_transactions_standard(filename=entry["file"])
+                )
+            elif loader == "schwab":
                 transactions.extend(
                     self._load_transactions_schwab(filename=entry["file"])
                 )
+            else:
+                raise ValueError(f"Unsupported transactions' format {loader}")
 
         return sorted(transactions, key=lambda t: t.date)
+
+    def _load_transactions_standard(self, filename: str) -> List[Transaction]:
+        trs = []
+        with open(filename) as csvfile:
+            for row in list(csv.DictReader(csvfile)):
+                date = datetime.strptime(row["date"], "%d/%m/%Y")
+                action = TransactionAction(row["action"])
+                price_str = row["price"]
+                price = Price.from_str(price_str) if price_str else None
+
+                fees_str = row["fees"]
+                fees = Price.from_str(fees_str) if fees_str else None
+
+                quantity_str = row["quantity"]
+                quantity = float(quantity_str) if quantity_str else None
+
+                amount_str = row["amount"]
+                amount = Price.from_str(amount_str) if amount_str else None
+
+                trs.append(
+                    Transaction(
+                        action=action,
+                        date=date,
+                        ticker=row["ticker"] or None,
+                        name=row["name"],
+                        price=price,
+                        quantity=quantity,
+                        fees=fees,
+                        amount=amount,
+                    )
+                )
+        return trs
 
     def _load_transactions_schwab(self, filename: str) -> List[Transaction]:
         trs = []

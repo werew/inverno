@@ -411,7 +411,7 @@ requests = ">=2.20"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f41c781d871fa4d4b47c5bd56a92ec2820307868bc00f6d24dda589afd5af4e2"
+content-hash = "95e6d42c9576cef599af629f348c436aa767ddf48d5c7e427831511a375c7941"
 
 [metadata.files]
 appdirs = [

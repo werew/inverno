@@ -100,8 +100,15 @@ class Transaction:
         self._check_has_identifier()
 
         # Price must be set, or we should be able to fetch it
+        if self.price is None and self.amount is None:
+            raise ValueError("Price or amount must be set for buy/sell transactions")
+
+        # Infer price from amount
         if self.price is None:
-            raise ValueError("Price must be set for buy/sell transactions")
+            self.price = Price(
+                currency=self.amount.currency,
+                amount=abs(self.amount.amount / self.quantity),
+            )
 
     def _check_constraints_sell(self):
         # Same constrains as buy transactions
