@@ -1,10 +1,15 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 from datetime import datetime
 import csv
 import yaml
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import yfinance as yf
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
 from .price import Price
+from .holding import Holding
 
 
 class Project:
@@ -13,7 +18,61 @@ class Project:
             cfg = yaml.load(fd, Loader=yaml.SafeLoader)
             self.transactions = self._load_transactions(config=cfg)
             self.balances = self._process_transactions()
+            self.meta = cfg["meta"]
+            self._prices = self._get_prices()
 
+    def get_meta_attributes(self) -> Set[str]:
+        attrs = set()
+        for entry in self.meta:
+            for attribute in entry["apply"]:
+                attrs.add(attribute)
+        return attrs
+
+    def _get_prices(self):
+        # Collect holdngs and earliest date
+        holdings = {}
+        for balance in self.balances:
+            for holding in balance.holdings.values():
+                if holding.get_key() not in holdings:
+                    holdings[holding.get_key()] = {
+                        "date": balance.date,
+                        "holding": holding,
+                    }
+        prices = {}
+        for key, entry in holdings.items():
+            prices[key] = self._get_holding_price(
+                start=entry["date"], holding=entry["holding"]
+            )
+        return prices
+
+    def _get_holding_price(self, start: datetime, holding: Holding):
+        # If prices are provided use those (missing values are interpolated)
+        # TODO
+
+        # Try to fetch prices from Yahoo Finance
+        if holding.ticker is not None:
+            ticker = yf.Ticker(holding.ticker)
+            prices = ticker.history(start=start, interval="1d")["Close"]
+            if prices.size > 0:
+                return prices
+
+        # Try to infer from transaction data
+        index = pd.date_range(start=start, end=datetime.now(), freq='D')
+        prices = pd.DataFrame([np.nan]*index.size, index=index)
+
+        cnt = 0
+        for trs in self.transactions:
+            if not holding.match_transaction(
+                transaction=trs
+            ) or trs.price is None:
+                continue
+            prices.loc[trs.date] = trs.price.amount
+            cnt += 1
+
+        if cnt > 2:
+            prices = prices.interpolate(method="linear")
+            return prices
+            
     def _process_transactions(self) -> List[Transaction]:
         if not self.transactions:
             return []
@@ -26,7 +85,6 @@ class Project:
         for trs in self.transactions:
             last_balance = last_balance.process_transaction(trs)
             balances.append(last_balance)
-            print(last_balance)
 
         return balances
 

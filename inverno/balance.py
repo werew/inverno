@@ -19,6 +19,7 @@ class Balance:
 
     def process_transaction(self, transaction: Transaction) -> "Balance":
         new_balance = copy.deepcopy(self)
+        new_balance.date = max(transaction.date, new_balance.date)
 
         if transaction.action == TransactionAction.BUY:
             self._process_buy_transaction(

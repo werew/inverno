@@ -1,5 +1,6 @@
 from typing import Optional, Union
 from .price import Price
+from .transaction import Transaction
 
 class Holding:
     def __init__(
@@ -23,6 +24,18 @@ class Holding:
         elif self.name is not None:
             return self.name
         raise ValueError("Cannot construct holding name")
+
+    def match_transaction(self, transaction: Transaction) -> bool:
+        if self.ticker is not None and self.ticker != transaction.ticker:
+            return False
+
+        if self.isin is not None and self.isin != transaction.isin:
+            return False
+
+        if self.name is not None and self.name != transaction.name:
+            return False
+
+        return True
 
     def __repr__(self):
         return f"{self.quantity} {self.get_key()}"
