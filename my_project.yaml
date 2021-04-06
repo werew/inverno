@@ -1,0 +1,32 @@
+# My project
+transactions:
+  - format: schwab
+    file: schwab.csv
+  - format: standard
+    file: vanguard.csv
+prices:
+  - match:
+      ticker: GOOGL
+    file: googl_prices.csv
+meta:
+  - match:
+      ticker: GOOGL
+    apply:
+      sector: Communication Services
+      industry: Interactive Media & Services
+      cap: large
+      type: equity
+  - match:
+      ticker: APPL
+    apply:
+      sector: Information Technology
+      industry: Technology Hardware Storage & Peripherals
+      cap: large
+      type: equity
+  - match:
+      name: LifeStrategy® 80% Equity Fund - Accumulation
+    apply:
+      type:
+        equity: 80%
+        bonds: 20%
+      
