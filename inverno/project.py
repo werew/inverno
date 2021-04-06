@@ -38,11 +38,20 @@ class Project:
                         "date": balance.date,
                         "holding": holding,
                     }
-        prices = {}
-        for key, entry in holdings.items():
-            prices[key] = self._get_holding_price(
+        prices = []
+        for _, entry in holdings.items():
+            price_history = self._get_holding_price(
                 start=entry["date"], holding=entry["holding"]
             )
+            if price_history is not None:
+                prices.append(price_history)
+
+        # Put all together in a single dataframe
+        prices = pd.concat(prices, axis=1, join="outer")
+
+        # Use linear interpolation to cover NaNs
+        prices = prices.interpolate(method="linear", axis=0)
+
         return prices
 
     def _get_holding_price(self, start: datetime, holding: Holding):
@@ -53,26 +62,25 @@ class Project:
         if holding.ticker is not None:
             ticker = yf.Ticker(holding.ticker)
             prices = ticker.history(start=start, interval="1d")["Close"]
+            prices.name = holding.get_key()
             if prices.size > 0:
                 return prices
 
         # Try to infer from transaction data
-        index = pd.date_range(start=start, end=datetime.now(), freq='D')
-        prices = pd.DataFrame([np.nan]*index.size, index=index)
+        index = pd.date_range(start=start, end=datetime.now(), freq="D")
+        prices = pd.Series([np.nan] * index.size, index=index)
+        prices.name = holding.get_key()
 
         cnt = 0
         for trs in self.transactions:
-            if not holding.match_transaction(
-                transaction=trs
-            ) or trs.price is None:
+            if not holding.match_transaction(transaction=trs) or trs.price is None:
                 continue
-            prices.loc[trs.date] = trs.price.amount
+            prices[trs.date] = trs.price.amount
             cnt += 1
 
         if cnt > 2:
-            prices = prices.interpolate(method="linear")
             return prices
-            
+
     def _process_transactions(self) -> List[Transaction]:
         if not self.transactions:
             return []
