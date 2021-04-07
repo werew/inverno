@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import yfinance as yf
+import dateutil.parser
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
 from .price import Price
@@ -16,10 +17,12 @@ class Project:
     def __init__(self, config: str):
         with open(config) as fd:
             cfg = yaml.load(fd, Loader=yaml.SafeLoader)
-            self.transactions = self._load_transactions(config=cfg)
-            self.balances = self._process_transactions()
             self.meta = cfg["meta"]
-            self._prices = self._get_prices()
+
+            self.transactions = self._load_transactions(config=cfg)
+            self.balances = self._get_balances()
+            self._first_holdings = self._get_first_holdings()
+            self._prices = self._get_prices(config=cfg)
 
     def get_meta_attributes(self) -> Set[str]:
         attrs = set()
@@ -28,7 +31,7 @@ class Project:
                 attrs.add(attribute)
         return attrs
 
-    def _get_prices(self):
+    def _get_first_holdings(self):
         # Collect holdngs and earliest date
         holdings = {}
         for balance in self.balances:
@@ -38,10 +41,13 @@ class Project:
                         "date": balance.date,
                         "holding": holding,
                     }
+        return holdings
+
+    def _get_prices(self, config: Dict):
         prices = []
-        for _, entry in holdings.items():
-            price_history = self._get_holding_price(
-                start=entry["date"], holding=entry["holding"]
+        for _, entry in self._first_holdings.items():
+            price_history = self._get_holding_prices(
+                config=config, start=entry["date"], holding=entry["holding"]
             )
             if price_history is not None:
                 prices.append(price_history)
@@ -54,9 +60,64 @@ class Project:
 
         return prices
 
-    def _get_holding_price(self, start: datetime, holding: Holding):
+    def _find_holding_match(self, config_section: List[Dict], holding: Holding):
+        for entry in config_section:
+            if not isinstance(entry, dict) or "match" not in entry:
+                raise ValueError("Expected a matching list")
+            if not isinstance(entry["match"], dict):
+                raise ValueError("A match section must contain key,value pairs")
+
+            m = entry["match"]
+            t = "ticker"
+            i = "isin"
+            n = "name"
+
+            if (
+                (t in m and m[t] is not None and m[t] == getattr(holding, t))
+                or (i in m and m[i] is not None and m[i] == getattr(holding, i))
+                or (n in m and m[n] is not None and m[n] == getattr(holding, n))
+            ):
+                return entry
+
+    def _try_get_holding_prices_from_cfg(
+        self, config: Dict, start: datetime, holding: Holding
+    ):
         # If prices are provided use those (missing values are interpolated)
-        # TODO
+        if "prices" not in config:
+            return
+
+        if not isinstance(config["prices"], list):
+            raise ValueError("Prices section must contain a matching list")
+
+        match = self._find_holding_match(
+            config_section=config["prices"], holding=holding
+        )
+
+        if match is None:
+            return
+
+        if "file" not in match:
+            raise ValueError("Prices entries must contain a file field")
+
+        index = pd.date_range(start=start, end=datetime.now(), freq="D")
+        prices = pd.Series([np.nan] * index.size, index=index)
+        prices.name = holding.get_key()
+
+        with open(match["file"]) as csvfile:
+            for row in list(csv.DictReader(csvfile)):
+                date = dateutil.parser.parse(row["date"], dayfirst=True)
+                price = Price.from_str(price=row["price"])
+                prices[date] = price.amount
+
+        return prices
+
+    def _get_holding_prices(self, config: Dict, start: datetime, holding: Holding):
+
+        prices = self._try_get_holding_prices_from_cfg(
+            config=config, start=start, holding=holding
+        )
+        if prices is not None:
+            return prices
 
         # Try to fetch prices from Yahoo Finance
         if holding.ticker is not None:
@@ -81,7 +142,7 @@ class Project:
         if cnt > 2:
             return prices
 
-    def _process_transactions(self) -> List[Transaction]:
+    def _get_balances(self) -> List[Balance]:
         if not self.transactions:
             return []
 
