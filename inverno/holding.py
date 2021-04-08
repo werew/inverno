@@ -2,6 +2,8 @@ from typing import Optional, Union
 from .price import Price
 from .transaction import Transaction
 
+holdings_currencies = {}
+
 class Holding:
     def __init__(
         self,

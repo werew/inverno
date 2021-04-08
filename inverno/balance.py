@@ -3,7 +3,7 @@ import copy
 from datetime import datetime
 from .transaction import Transaction, TransactionAction
 from .price import Price, Currency
-from .holding import Holding
+from .holding import Holding, holdings_currencies
 
 
 class Balance:
@@ -84,6 +84,9 @@ class Balance:
             new_cash -= transaction.fees
         new_balance.cash[new_cash.currency] = new_cash
 
+        # Register holding currency
+        holdings_currencies[new_holding.get_key()] = transaction.price.currency
+
     def _process_buy_transaction(
         self, new_balance: "Balance", transaction: Transaction
     ):
@@ -100,6 +103,9 @@ class Balance:
             new_balance.holdings[new_holding.get_key()] += new_holding
         else:
             new_balance.holdings[new_holding.get_key()] = new_holding
+
+        # Register holding currency
+        holdings_currencies[new_holding.get_key()] = transaction.price.currency
 
     def _process_cash_transaction(
         self, new_balance: "Balance", transaction: Transaction
@@ -126,7 +132,7 @@ class Balance:
     ):
         # Apply fees (if any) (??)
         if transaction.fees:
-            cash = new_balance.get_cash_balance(transaction.price.currency)
+            cash = new_balance.get_cash_balance(transaction.fees.currency)
             new_cash = cash - transaction.fees
             new_balance.cash[new_cash.currency] = new_cash
 

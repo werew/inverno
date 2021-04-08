@@ -7,10 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yfinance as yf
 import dateutil.parser
+from forex_python.converter import CurrencyRates
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
 from .price import Price
-from .holding import Holding
+from .holding import Holding, holdings_currencies
 
 
 class Project:
@@ -23,6 +24,7 @@ class Project:
             self.balances = self._get_balances()
             self._first_holdings = self._get_first_holdings()
             self._prices = self._get_prices(config=cfg)
+            self._allocations = self._get_allocations()
 
     def get_meta_attributes(self) -> Set[str]:
         attrs = set()
@@ -34,7 +36,7 @@ class Project:
     def _get_first_holdings(self):
         # Collect holdngs and earliest date
         holdings = {}
-        for balance in self.balances:
+        for balance in self.balances.values():
             for holding in balance.holdings.values():
                 if holding.get_key() not in holdings:
                     holdings[holding.get_key()] = {
@@ -42,6 +44,49 @@ class Project:
                         "holding": holding,
                     }
         return holdings
+
+    def _get_allocations(self):
+
+        # New dataframe with the same layout of prices
+        allocations = pd.DataFrame().reindex_like(self._prices)
+        cash = pd.DataFrame(columns=["cash"], index=allocations.index, dtype=np.float64)
+        usd_rates = CurrencyRates().get_rates("USD")
+
+        for balance in self.balances.values():
+            # Populate holdings columns
+            for holding in balance.holdings.values():
+                allocations.loc[balance.date, holding.get_key()] = holding.quantity
+
+            # Populate cash dataframe
+            total_cash = 0.0
+            for c in balance.cash.values():
+                rate = usd_rates.get(c.currency.name)
+                if rate is None:
+                    raise ValueError(f"Unsupported currency {cash.currency.name}")
+                total_cash += c.amount / rate
+            cash.loc[balance.date, "cash"] = total_cash
+
+        # Fill empty slot using previous known values
+        allocations = allocations.interpolate(method="pad", axis=0)
+        cash = cash.interpolate(method="pad", axis=0)
+
+        # Apply prices
+        allocations *= self._prices
+
+        # For each column, apply conversion rate to USD
+        for key in self._first_holdings:
+            currency = holdings_currencies.get(key)
+            if currency is None:
+                raise ValueError(f"Couldn't determine currency for holding {key}")
+
+            rate = usd_rates.get(currency.name)
+            if rate is None:
+                raise ValueError(f"Unsupported currency {currency.name}")
+
+            allocations[key] /= rate
+
+        # Return holdings allocations including cash
+        return pd.concat([allocations, cash], axis=1)
 
     def _get_prices(self, config: Dict):
         prices = []
@@ -56,7 +101,7 @@ class Project:
         prices = pd.concat(prices, axis=1, join="outer")
 
         # Use linear interpolation to cover NaNs
-        prices = prices.interpolate(method="linear", axis=0)
+        prices = prices.interpolate(method="time", axis=0)
 
         return prices
 
@@ -100,14 +145,15 @@ class Project:
             raise ValueError("Prices entries must contain a file field")
 
         index = pd.date_range(start=start, end=datetime.now(), freq="D")
-        prices = pd.Series([np.nan] * index.size, index=index)
+        prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 
         with open(match["file"]) as csvfile:
             for row in list(csv.DictReader(csvfile)):
                 date = dateutil.parser.parse(row["date"], dayfirst=True)
                 price = Price.from_str(price=row["price"])
-                prices[date] = price.amount
+                if date >= start:
+                    prices[date] = price.amount
 
         return prices
 
@@ -129,31 +175,28 @@ class Project:
 
         # Try to infer from transaction data
         index = pd.date_range(start=start, end=datetime.now(), freq="D")
-        prices = pd.Series([np.nan] * index.size, index=index)
+        prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 
-        cnt = 0
         for trs in self.transactions:
             if not holding.match_transaction(transaction=trs) or trs.price is None:
                 continue
             prices[trs.date] = trs.price.amount
-            cnt += 1
 
-        if cnt > 2:
-            return prices
+        return prices
 
-    def _get_balances(self) -> List[Balance]:
+    def _get_balances(self) -> Dict[datetime, Balance]:
         if not self.transactions:
-            return []
+            return {}
 
-        balances = []
+        balances = {}
 
         start_date = self.transactions[0].date
         last_balance = Balance(date=start_date)
 
         for trs in self.transactions:
             last_balance = last_balance.process_transaction(trs)
-            balances.append(last_balance)
+            balances[last_balance.date] = last_balance
 
         return balances
 
