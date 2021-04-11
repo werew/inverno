@@ -1,5 +1,6 @@
 from typing import Dict, List, Set
 from datetime import datetime
+from collections import defaultdict
 import csv
 import yaml
 import pandas as pd
@@ -7,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yfinance as yf
 import dateutil.parser
+import matplotlib.animation as ani
 from forex_python.converter import CurrencyRates
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
@@ -18,20 +20,91 @@ class Project:
     def __init__(self, config: str):
         with open(config) as fd:
             cfg = yaml.load(fd, Loader=yaml.SafeLoader)
-            self.meta = cfg["meta"]
 
             self.transactions = self._load_transactions(config=cfg)
             self.balances = self._get_balances()
             self._first_holdings = self._get_first_holdings()
             self._prices = self._get_prices(config=cfg)
             self._allocations = self._get_allocations()
+            self._meta = self._parse_meta_attributes(config=cfg)
+            self._gen_all_meta_reports()
 
-    def get_meta_attributes(self) -> Set[str]:
-        attrs = set()
-        for entry in self.meta:
-            for attribute in entry["apply"]:
-                attrs.add(attribute)
+    #def test(self):
+    #    fig = plt.figure()
+    #    plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
+    #    plt.subplots_adjust(bottom=0.2, top=0.9)
+    #    colors = ["red", "green", "blue", "orange"]
+
+    #    def asd(i):
+    #        # plt.legend(self._allocations.columns)
+    #        p = plt.plot(self._allocations[:i].index, self._allocations[:i].values)
+    #        for i in range(len(self._allocations.columns)):
+    #            p[i].set_color(colors[i % len(colors)])
+
+    #    animator = ani.FuncAnimation(
+    #        fig, asd, frames=self._allocations.index.size, interval=100
+    #    )
+    #    animator.save("test.gif", writer="imagemagick", fps=30)
+    #    # animator.save('test.mp4')
+
+    def _parse_meta_attributes(self, config: Dict) -> defaultdict:
+        # This dict is structured as following:
+        #  attrs[<attribute name>][<entry>][<holding key>] = x
+        # where 0 < x <= 1
+        attrs = defaultdict(lambda: defaultdict(dict))
+
+        meta = config.get("meta")
+        if meta is None:
+            return attrs
+
+        for entry in meta:
+            if not isinstance(entry, dict) or "match" not in entry:
+                raise ValueError("Expected a matching list")
+
+            holding = self._find_matching_holding(entry["match"])
+            if holding is None:
+                raise ValueError(f"Couldn't find holding {entry['match']}")
+
+            for attr, val in entry["apply"].items():
+                if isinstance(val, str):
+                    attrs[attr][val][holding.get_key()] = 1
+
+                elif isinstance(val, dict):
+                    for k,v in val.items():
+                        v = float(v.strip("%")) / 100.
+                        attrs[attr][k][holding.get_key()] = v
         return attrs
+
+    def _gen_all_meta_reports(self):
+        for attr, values in self._meta.items():
+            self._gen_meta_report(attribute=attr)
+
+    def _gen_meta_report(self, attribute: str):
+
+        columns = list(self._meta[attribute])+['unknown']
+        df = pd.DataFrame(0, columns=columns, index=self._allocations.index, dtype=np.float64)
+        
+        # Keep record of how much we allocate for each holding
+        tot_holdings = defaultdict(lambda: 0)
+
+        # Compute holdings allocations
+        for entry, values in self._meta[attribute].items():
+            for holding_key, portion in values.items():
+                df[entry] += portion * self._allocations[holding_key]
+                tot_holdings[holding_key] += portion
+
+        # Cumpute unknown allocations
+        for holding_key in self._first_holdings:
+            allocation = tot_holdings[holding_key]
+
+            if allocation > 1:
+                raise ValueError(f"Holding {holding_key} has more than 100% allocation for attribute {attribute}")
+
+            elif allocation == 1:
+                continue
+
+            df['unknown'] += self._allocations[holding_key] * (1 - allocation)
+        return df
 
     def _get_first_holdings(self):
         # Collect holdngs and earliest date
@@ -86,7 +159,7 @@ class Project:
             allocations[key] /= rate
 
         # Return holdings allocations including cash
-        return pd.concat([allocations, cash], axis=1)
+        return pd.concat([allocations, cash], axis=1).fillna(0)
 
     def _get_prices(self, config: Dict):
         prices = []
@@ -105,23 +178,38 @@ class Project:
 
         return prices
 
-    def _find_holding_match(self, config_section: List[Dict], holding: Holding):
+    def _match_holding(self, match_section: Dict, holding: Holding) -> bool:
+        if not isinstance(match_section, dict):
+            raise ValueError("Expected a matching list")
+
+        h = holding
+        m = match_section
+        t = "ticker"
+        i = "isin"
+        n = "name"
+
+        return (
+            (m.get(t) is not None and m[t].strip() == getattr(h, t))
+            or (m.get(i) is not None and m[i].strip() == getattr(h, i))
+            or (m.get(n) is not None and m[n].strip() == getattr(h, n))
+        )
+
+    def _find_matching_holding(self, match_section: Dict) -> Holding:
+        if not isinstance(match_section, dict):
+            raise ValueError("Expected a matching list")
+
+        for entry in self._first_holdings.values():
+            if self._match_holding(match_section=match_section, holding=entry["holding"]):
+                return entry["holding"]
+
+    def _find_matching_entry(self, config_section: List[Dict], holding: Holding):
         for entry in config_section:
             if not isinstance(entry, dict) or "match" not in entry:
                 raise ValueError("Expected a matching list")
             if not isinstance(entry["match"], dict):
                 raise ValueError("A match section must contain key,value pairs")
 
-            m = entry["match"]
-            t = "ticker"
-            i = "isin"
-            n = "name"
-
-            if (
-                (t in m and m[t] is not None and m[t] == getattr(holding, t))
-                or (i in m and m[i] is not None and m[i] == getattr(holding, i))
-                or (n in m and m[n] is not None and m[n] == getattr(holding, n))
-            ):
+            if self._match_holding(match_section=entry["match"], holding=holding):
                 return entry
 
     def _try_get_holding_prices_from_cfg(
@@ -134,7 +222,7 @@ class Project:
         if not isinstance(config["prices"], list):
             raise ValueError("Prices section must contain a matching list")
 
-        match = self._find_holding_match(
+        match = self._find_matching_entry(
             config_section=config["prices"], holding=holding
         )
 
@@ -166,12 +254,12 @@ class Project:
             return prices
 
         # Try to fetch prices from Yahoo Finance
-        if holding.ticker is not None:
-            ticker = yf.Ticker(holding.ticker)
-            prices = ticker.history(start=start, interval="1d")["Close"]
-            prices.name = holding.get_key()
-            if prices.size > 0:
-                return prices
+        # if holding.ticker is not None:
+        #    ticker = yf.Ticker(holding.ticker)
+        #    prices = ticker.history(start=start, interval="1d")["Close"]
+        #    prices.name = holding.get_key()
+        #    if prices.size > 0:
+        #        return prices
 
         # Try to infer from transaction data
         index = pd.date_range(start=start, end=datetime.now(), freq="D")

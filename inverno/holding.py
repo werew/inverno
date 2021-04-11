@@ -13,9 +13,9 @@ class Holding:
         isin: Optional[str] = None,
     ):
         self.quantity = quantity
-        self.name = name
-        self.ticker = ticker
-        self.isin = isin
+        self.name = None if name is None else name.strip()
+        self.ticker = None if ticker is None else ticker.strip()
+        self.isin = None if isin is None else isin.strip()
 
     def get_key(self):
         # prioritize stronger identifiers
