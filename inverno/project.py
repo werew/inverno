@@ -1,6 +1,9 @@
-from typing import Dict, List, Set
+from typing import Dict, List
 from datetime import datetime
 from collections import defaultdict
+import shutil
+import tempfile
+import os
 import csv
 import yaml
 import pandas as pd
@@ -10,6 +13,7 @@ import yfinance as yf
 import dateutil.parser
 import matplotlib.animation as ani
 from forex_python.converter import CurrencyRates
+from jinja2 import Environment, PackageLoader, select_autoescape
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
 from .price import Price
@@ -27,25 +31,30 @@ class Project:
             self._prices = self._get_prices(config=cfg)
             self._allocations = self._get_allocations()
             self._meta = self._parse_meta_attributes(config=cfg)
-            self._gen_all_meta_reports()
+            self.gen_report(dst="./qwe")
 
-    #def test(self):
-    #    fig = plt.figure()
-    #    plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
-    #    plt.subplots_adjust(bottom=0.2, top=0.9)
-    #    colors = ["red", "green", "blue", "orange"]
+    def gen_report(self, dst: str):
+        # First we copy the html dir into a tmp folder
+        src = os.path.join(os.path.dirname(__file__), "html")
+        tmp_dst = tempfile.TemporaryDirectory(suffix="." + __package__)
+        shutil.copytree(src=src, dst=tmp_dst.name, dirs_exist_ok=True)
 
-    #    def asd(i):
-    #        # plt.legend(self._allocations.columns)
-    #        p = plt.plot(self._allocations[:i].index, self._allocations[:i].values)
-    #        for i in range(len(self._allocations.columns)):
-    #            p[i].set_color(colors[i % len(colors)])
+        meta_reports = self._gen_all_meta_reports(report_dir=tmp_dst.name)
 
-    #    animator = ani.FuncAnimation(
-    #        fig, asd, frames=self._allocations.index.size, interval=100
-    #    )
-    #    animator.save("test.gif", writer="imagemagick", fps=30)
-    #    # animator.save('test.mp4')
+        jinja_env = Environment(
+            loader=PackageLoader("inverno", "html"),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+
+        index_path = os.path.join(tmp_dst.name, "index.html")
+        index_template = jinja_env.get_template(name="index.html")
+        index_template.stream(meta_reports=meta_reports).dump(index_path)
+        #index = index_template.render(meta_reports=meta_reports)
+
+        # The report is ready, move it to dst
+        if os.path.isdir(dst):
+            dst = os.path.join(dst, os.path.basename(dst))
+        shutil.move(src=tmp_dst.name, dst=dst)
 
     def _parse_meta_attributes(self, config: Dict) -> defaultdict:
         # This dict is structured as following:
@@ -70,20 +79,32 @@ class Project:
                     attrs[attr][val][holding.get_key()] = 1
 
                 elif isinstance(val, dict):
-                    for k,v in val.items():
-                        v = float(v.strip("%")) / 100.
+                    for k, v in val.items():
+                        v = float(v.strip("%")) / 100.0
                         attrs[attr][k][holding.get_key()] = v
         return attrs
 
-    def _gen_all_meta_reports(self):
-        for attr, values in self._meta.items():
-            self._gen_meta_report(attribute=attr)
+    def _gen_all_meta_reports(self, report_dir: str) -> Dict[str,Dict]:
+        reports = {}
+        for attr in self._meta:
+            reports[attr] = []
 
-    def _gen_meta_report(self, attribute: str):
+            # Allocation history
+            df = self._gen_meta_attr_df(attribute=attr)
+            src = os.path.join("media", f"{attr}_plot_anim.mp4")
+            plot_anim_path = os.path.join(report_dir, src)
+            self._gen_animated_plot(df=df, dst=plot_anim_path)
+            reports[attr].append({'type': 'video', 'name': 'Allocation history', 'src': src})
 
-        columns = list(self._meta[attribute])+['unknown']
-        df = pd.DataFrame(0, columns=columns, index=self._allocations.index, dtype=np.float64)
-        
+        return reports
+
+    def _gen_meta_attr_df(self, attribute: str):
+
+        columns = list(self._meta[attribute]) + ["unknown"]
+        df = pd.DataFrame(
+            0, columns=columns, index=self._allocations.index, dtype=np.float64
+        )
+
         # Keep record of how much we allocate for each holding
         tot_holdings = defaultdict(lambda: 0)
 
@@ -98,13 +119,36 @@ class Project:
             allocation = tot_holdings[holding_key]
 
             if allocation > 1:
-                raise ValueError(f"Holding {holding_key} has more than 100% allocation for attribute {attribute}")
+                raise ValueError(
+                    f"Holding {holding_key} has more than 100% allocation for attribute {attribute}"
+                )
 
             elif allocation == 1:
                 continue
 
-            df['unknown'] += self._allocations[holding_key] * (1 - allocation)
+            df["unknown"] += self._allocations[holding_key] * (1 - allocation)
         return df
+
+    def _gen_animated_plot(self, df: pd.DataFrame, dst: str, days: int = 10):
+        print("generating ", dst)
+        fig = plt.figure()
+        plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
+        plt.subplots_adjust(bottom=0.2, top=0.9)
+        colors = ["red", "green", "blue", "orange"]
+
+        frames = min(days, df.index.size)
+        start = df.index.size - frames
+
+        def update_frame(i):
+            plt.legend(df.columns)
+            p = plt.plot(df[start:start+i].index, df[start:start+i].values)
+            for i in range(len(df.columns)):
+                p[i].set_color(colors[i % len(colors)])
+
+        animator = ani.FuncAnimation(
+            fig, update_frame, frames=frames, interval=300
+        )
+        animator.save(dst, fps=10)
 
     def _get_first_holdings(self):
         # Collect holdngs and earliest date
@@ -199,7 +243,9 @@ class Project:
             raise ValueError("Expected a matching list")
 
         for entry in self._first_holdings.values():
-            if self._match_holding(match_section=match_section, holding=entry["holding"]):
+            if self._match_holding(
+                match_section=match_section, holding=entry["holding"]
+            ):
                 return entry["holding"]
 
     def _find_matching_entry(self, config_section: List[Dict], holding: Holding):
