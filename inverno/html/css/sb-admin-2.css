@@ -10816,12 +10816,13 @@ a:focus {
   height: 15rem;
   width: 100%;
 }
-
-@media (min-width: 768px) {
-  .chart-pie {
-    height: calc(20rem - 43px) !important;
-  }
-}
+/*
+*@media (min-width: 768px) {
+*  .chart-pie {
+*    height: calc(20rem - 43px) !important;
+*  }
+*}
+*/
 
 .bg-login-image {
   background: url("https://source.unsplash.com/K4mSJ7kc0As/600x800");

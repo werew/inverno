@@ -17,7 +17,7 @@
         rel="stylesheet">
 
     <!-- Custom styles for this template-->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="css/sb-admin-2.css" rel="stylesheet">
 
 </head>
 
@@ -126,6 +126,8 @@
                     </div>
 
 
+                    <script>piecharts = {}</script>
+
                     {% for attr, reports in meta_reports.items() %}
 
                     <!-- Content Row -->
@@ -150,13 +152,23 @@
                                     </div>
                                     
                                     <!-- Card Body -->
+                                    <div class="card-body" style="height: 500px">
                                     {% if report["type"] == "video" %}
-                                    <div class="card-body">
+
                                         <video width="100%" controls="controls">
                                             <source src="{{report['src']}}" type="video/mp4">
                                         </video>
-                                    </div>
+
+                                    {% elif report["type"] == "piechart" %}
+                                     
+                                        {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
+                                        <div class="chart-pie pt-4" style="height: 90%">
+                                            <canvas id="{{chart_id}}"></canvas>
+                                        </div>
+                                        <script>piecharts[{{chart_id | tojson}}] = {{report | tojson}}</script>
+
                                     {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -212,6 +224,9 @@
     <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
 
+    <!-- Charts -->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+    <script src="js/charts.js"></script>
 </body>
 
 </html>

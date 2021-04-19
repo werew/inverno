@@ -95,6 +95,7 @@ class Project:
             plot_anim_path = os.path.join(report_dir, src)
             self._gen_animated_plot(df=df, dst=plot_anim_path)
             reports[attr].append({'type': 'video', 'name': 'Allocation history', 'src': src})
+            reports[attr].append({'type': 'piechart', 'name': 'Allocation', 'data': [55, 30, 15, 12], 'labels': ['A', 'B', 'C', 'D']})
 
         return reports
 
