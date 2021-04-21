@@ -17,7 +17,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
 from .price import Price, Currency
-from .common import log_info
+from .common import log_info, log_warning
 from .holding import Holding, holdings_currencies
 
 
@@ -129,6 +129,7 @@ class Project:
     def _gen_all_meta_reports(self, report_dir: str) -> Dict[str, Dict]:
         reports = {}
         for attr in self._meta:
+            log_info(f"Generating report for attribute {attr}")
             reports[attr] = []
 
             df = self._gen_meta_attr_df(attribute=attr)
@@ -349,6 +350,7 @@ class Project:
             config=config, start=start, holding=holding
         )
         if prices is not None:
+            log_info(f"Using user-provided prices for {holding.get_key()}")
             return prices
 
         # Try to fetch prices from Yahoo Finance
@@ -357,9 +359,14 @@ class Project:
             prices = ticker.history(start=start, interval="1d")["Close"]
             prices.name = holding.get_key()
             if prices.size > 0:
+                log_info(f"Using Yahoo Finance prices for {holding.get_key()}")
                 return prices
 
         # Try to infer from transaction data
+        log_warning(
+            f"Inferring prices from transactions for {holding.get_key()}"
+            ", prices could be inaccurate"
+        )
         index = pd.date_range(start=start, end=datetime.now(), freq="D")
         prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
