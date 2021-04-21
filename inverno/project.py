@@ -16,7 +16,8 @@ from forex_python.converter import CurrencyRates
 from jinja2 import Environment, PackageLoader, select_autoescape
 from .transaction import Transaction, TransactionAction
 from .balance import Balance
-from .price import Price
+from .price import Price, Currency
+from .common import log_info
 from .holding import Holding, holdings_currencies
 
 
@@ -25,19 +26,59 @@ class Project:
         with open(config) as fd:
             cfg = yaml.load(fd, Loader=yaml.SafeLoader)
 
+            self.days = 100
+            self._dst_currency_rates = CurrencyRates().get_rates("USD")
             self.transactions = self._load_transactions(config=cfg)
             self.balances = self._get_balances()
             self._first_holdings = self._get_first_holdings()
             self._prices = self._get_prices(config=cfg)
             self._allocations = self._get_allocations()
+            self._money_balances = self._allocations.sum(axis=1)
+            self._earnings = self._get_earnings()
             self._meta = self._parse_meta_attributes(config=cfg)
             self.gen_report(dst="./qwe")
+
+    def _normalize_currency(self, price: Price):
+        rate = self._dst_currency_rates.get(price.currency.name)
+        if rate is None:
+            raise ValueError(f"Unsupported currency {price.currency.name}")
+        return price.amount / rate
+
+    def _get_earnings(self):
+        earnings = self._money_balances.copy()
+
+        for trs in self.transactions:
+            if trs.action == TransactionAction.CASH:
+                rows = earnings.loc[trs.date :]
+                delta = self._normalize_currency(trs.amount)
+                earnings.loc[trs.date :] = rows.add(-delta)
+            elif trs.action == TransactionAction.VEST:
+                rows = earnings.loc[trs.date :]
+                price = self._prices.loc[trs.date :][trs.get_holding_key()].iloc[0]
+                delta = trs.quantity * price  # TODO convert currency
+                earnings.loc[trs.date :] = rows.add(-delta)
+
+        return earnings
 
     def gen_report(self, dst: str):
         # First we copy the html dir into a tmp folder
         src = os.path.join(os.path.dirname(__file__), "html")
         tmp_dst = tempfile.TemporaryDirectory(suffix="." + __package__)
         shutil.copytree(src=src, dst=tmp_dst.name, dirs_exist_ok=True)
+
+        tmp_balances_view = self._money_balances.iloc[-self.days :]
+        balances = {
+            "data": tmp_balances_view.values.tolist(),
+            "labels": [d.strftime("%d %b %Y") for d in tmp_balances_view.index],
+        }
+
+        tmp_earnings_view = self._earnings.iloc[-self.days :]
+        earnings_start = tmp_earnings_view.iloc[0]
+        tmp_earnings_view = tmp_earnings_view.add(-earnings_start)
+        earnings = {
+            "data": tmp_earnings_view.values.tolist(),
+            "labels": [d.strftime("%d %b %Y") for d in tmp_earnings_view.index],
+        }
 
         meta_reports = self._gen_all_meta_reports(report_dir=tmp_dst.name)
 
@@ -48,8 +89,9 @@ class Project:
 
         index_path = os.path.join(tmp_dst.name, "index.html")
         index_template = jinja_env.get_template(name="index.html")
-        index_template.stream(meta_reports=meta_reports).dump(index_path)
-        #index = index_template.render(meta_reports=meta_reports)
+        index_template.stream(
+            meta_reports=meta_reports, balances=balances, earnings=earnings
+        ).dump(index_path)
 
         # The report is ready, move it to dst
         if os.path.isdir(dst):
@@ -84,18 +126,31 @@ class Project:
                         attrs[attr][k][holding.get_key()] = v
         return attrs
 
-    def _gen_all_meta_reports(self, report_dir: str) -> Dict[str,Dict]:
+    def _gen_all_meta_reports(self, report_dir: str) -> Dict[str, Dict]:
         reports = {}
         for attr in self._meta:
             reports[attr] = []
 
-            # Allocation history
             df = self._gen_meta_attr_df(attribute=attr)
+
+            # Allocation
+            allocation = df.tail(1).values.tolist()[0]
+            reports[attr].append(
+                {
+                    "type": "piechart",
+                    "name": "Allocation",
+                    "data": allocation,
+                    "labels": list(df.columns),
+                }
+            )
+
+            # Allocation history
             src = os.path.join("media", f"{attr}_plot_anim.mp4")
             plot_anim_path = os.path.join(report_dir, src)
             self._gen_animated_plot(df=df, dst=plot_anim_path)
-            reports[attr].append({'type': 'video', 'name': 'Allocation history', 'src': src})
-            reports[attr].append({'type': 'piechart', 'name': 'Allocation', 'data': [55, 30, 15, 12], 'labels': ['A', 'B', 'C', 'D']})
+            reports[attr].append(
+                {"type": "video", "name": "Allocation history", "src": src}
+            )
 
         return reports
 
@@ -130,25 +185,23 @@ class Project:
             df["unknown"] += self._allocations[holding_key] * (1 - allocation)
         return df
 
-    def _gen_animated_plot(self, df: pd.DataFrame, dst: str, days: int = 10):
-        print("generating ", dst)
+    def _gen_animated_plot(self, df: pd.DataFrame, dst: str):
         fig = plt.figure()
         plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
         plt.subplots_adjust(bottom=0.2, top=0.9)
         colors = ["red", "green", "blue", "orange"]
 
-        frames = min(days, df.index.size)
+        frames = min(self.days, df.index.size)
+        frames = 10  # TODO rm
         start = df.index.size - frames
 
         def update_frame(i):
             plt.legend(df.columns)
-            p = plt.plot(df[start:start+i].index, df[start:start+i].values)
+            p = plt.plot(df[start : start + i].index, df[start : start + i].values)
             for i in range(len(df.columns)):
                 p[i].set_color(colors[i % len(colors)])
 
-        animator = ani.FuncAnimation(
-            fig, update_frame, frames=frames, interval=300
-        )
+        animator = ani.FuncAnimation(fig, update_frame, frames=frames, interval=300)
         animator.save(dst, fps=10)
 
     def _get_first_holdings(self):
@@ -168,7 +221,6 @@ class Project:
         # New dataframe with the same layout of prices
         allocations = pd.DataFrame().reindex_like(self._prices)
         cash = pd.DataFrame(columns=["cash"], index=allocations.index, dtype=np.float64)
-        usd_rates = CurrencyRates().get_rates("USD")
 
         for balance in self.balances.values():
             # Populate holdings columns
@@ -178,10 +230,7 @@ class Project:
             # Populate cash dataframe
             total_cash = 0.0
             for c in balance.cash.values():
-                rate = usd_rates.get(c.currency.name)
-                if rate is None:
-                    raise ValueError(f"Unsupported currency {cash.currency.name}")
-                total_cash += c.amount / rate
+                total_cash += self._normalize_currency(c)
             cash.loc[balance.date, "cash"] = total_cash
 
         # Fill empty slot using previous known values
@@ -192,12 +241,13 @@ class Project:
         allocations *= self._prices
 
         # For each column, apply conversion rate to USD
+        # TODO select currency
         for key in self._first_holdings:
             currency = holdings_currencies.get(key)
             if currency is None:
                 raise ValueError(f"Couldn't determine currency for holding {key}")
 
-            rate = usd_rates.get(currency.name)
+            rate = self._dst_currency_rates.get(currency.name)
             if rate is None:
                 raise ValueError(f"Unsupported currency {currency.name}")
 
@@ -219,7 +269,8 @@ class Project:
         prices = pd.concat(prices, axis=1, join="outer")
 
         # Use linear interpolation to cover NaNs
-        prices = prices.interpolate(method="time", axis=0)
+        # TODO make interpolation optional
+        prices = prices.interpolate(method="time", axis=0, limit_direction="both")
 
         return prices
 
@@ -301,12 +352,12 @@ class Project:
             return prices
 
         # Try to fetch prices from Yahoo Finance
-        # if holding.ticker is not None:
-        #    ticker = yf.Ticker(holding.ticker)
-        #    prices = ticker.history(start=start, interval="1d")["Close"]
-        #    prices.name = holding.get_key()
-        #    if prices.size > 0:
-        #        return prices
+        if holding.ticker is not None:
+            ticker = yf.Ticker(holding.ticker)
+            prices = ticker.history(start=start, interval="1d")["Close"]
+            prices.name = holding.get_key()
+            if prices.size > 0:
+                return prices
 
         # Try to infer from transaction data
         index = pd.date_range(start=start, end=datetime.now(), freq="D")

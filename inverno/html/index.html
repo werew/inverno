@@ -125,9 +125,40 @@
                         </div>
                     </div>
 
+                    <script>CURRENCY_SYM = '$'</script>
+
+                    <!-- Balance Chart -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Balance</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="balance_chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <script>balances = {{balances | tojson}}</script>
+
+                    <!-- Earnings Chart -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Earnings</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <canvas id="earnings_chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <script>earnings = {{earnings | tojson}}</script>
+
+
+
+
+                    <!-- Attributes -->
 
                     <script>piecharts = {}</script>
-
                     {% for attr, reports in meta_reports.items() %}
 
                     <!-- Content Row -->
@@ -155,14 +186,14 @@
                                     <div class="card-body" style="height: 500px">
                                     {% if report["type"] == "video" %}
 
-                                        <video width="100%" controls="controls">
+                                        <video style="width: 100%; height: 100%;" controls="controls">
                                             <source src="{{report['src']}}" type="video/mp4">
                                         </video>
 
                                     {% elif report["type"] == "piechart" %}
                                      
                                         {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
-                                        <div class="chart-pie pt-4" style="height: 90%">
+                                        <div class="chart-pie pt-4" style="width: 100%; height: 90%">
                                             <canvas id="{{chart_id}}"></canvas>
                                         </div>
                                         <script>piecharts[{{chart_id | tojson}}] = {{report | tojson}}</script>

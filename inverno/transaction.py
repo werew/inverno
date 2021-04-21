@@ -54,6 +54,26 @@ class Transaction:
 
         self._check_constraints()
 
+    def get_holding_key(self):
+        if (
+            self.action != TransactionAction.BUY
+            and self.action != TransactionAction.SELL
+            and self.action != TransactionAction.VEST
+            and self.action != TransactionAction.SPLIT
+        ):
+            raise ValueError(
+                f"Cannot get holding key from transaction with action {self.action}"
+            )
+
+        # prioritize stronger identifiers
+        if self.isin is not None:
+            return self.isin
+        elif self.ticker is not None:
+            return self.ticker
+        elif self.name is not None:
+            return self.name
+        raise ValueError("Cannot construct holding name")
+
     def _check_constraints(self):
         if self.quantity is not None and self.quantity <= 0:
             raise ValueError("Quantity must be > 0")
