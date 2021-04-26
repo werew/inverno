@@ -5,18 +5,9 @@ from functools import total_ordering
 
 
 class Currency(Enum):
-    USD = [
-        "USD",
-        "$",
-    ]
-    GBP = [
-        "GBP",
-        "£",
-    ]
-    EUR = [
-        "EUR",
-        "€",
-    ]
+    USD = "$"
+    GBP = "£"
+    EUR = "€"
 
 
 @total_ordering
@@ -34,15 +25,18 @@ class Price:
         if price.strip().startswith("-"):
             amount = -amount
 
-        while currency is None:
+        if currency is None:
             for known_currency in Currency:
-                for symbol in known_currency.value:
+                for symbol in [known_currency.name, known_currency.value]:
                     if symbol in price:
                         currency = known_currency
                         break
 
                 if currency is not None:
                     break
+
+            if currency is None:
+                raise ValueError(f"Couldn't get currency for price {str}")
 
         return Price(currency=currency, amount=amount)
 

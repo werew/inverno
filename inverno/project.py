@@ -4,39 +4,39 @@ from collections import defaultdict
 import shutil
 import tempfile
 import os
-import csv
-import yaml
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import yfinance as yf
-import dateutil.parser
 import matplotlib.animation as ani
+import yfinance as yf
 from forex_python.converter import CurrencyRates
 from jinja2 import Environment, PackageLoader, select_autoescape
-from .transaction import Transaction, TransactionAction
+from .transaction import TransactionAction
 from .balance import Balance
 from .price import Price, Currency
 from .common import log_info, log_warning
 from .holding import Holding, holdings_currencies
+from .config import Config
 
 
 class Project:
     def __init__(self, config: str):
-        with open(config) as fd:
-            cfg = yaml.load(fd, Loader=yaml.SafeLoader)
 
-            self.days = 100
-            self._dst_currency_rates = CurrencyRates().get_rates("USD")
-            self.transactions = self._load_transactions(config=cfg)
-            self.balances = self._get_balances()
-            self._first_holdings = self._get_first_holdings()
-            self._prices = self._get_prices(config=cfg)
-            self._allocations = self._get_allocations()
-            self._money_balances = self._allocations.sum(axis=1)
-            self._earnings = self._get_earnings()
-            self._meta = self._parse_meta_attributes(config=cfg)
-            self.gen_report(dst="./qwe")
+        self.cfg = Config(path=config)
+
+        self._dst_currency_rates = CurrencyRates().get_rates(self.cfg.currency.name)
+
+        # Maps holdings to their currency
+        self._holding_to_currency = {}
+
+        self.balances = self._get_balances()
+        self._first_holdings = self._get_first_holdings()
+        self._prices = self._get_prices()
+        self._allocations = self._get_allocations()
+        self._money_balances = self._allocations.sum(axis=1)
+        self._earnings = self._get_earnings()
+        self._meta = self.cfg.get_meta_attributes(self._first_holdings)
+        self.gen_report(dst="./qwe")
 
     def _normalize_currency(self, price: Price):
         rate = self._dst_currency_rates.get(price.currency.name)
@@ -47,7 +47,7 @@ class Project:
     def _get_earnings(self):
         earnings = self._money_balances.copy()
 
-        for trs in self.transactions:
+        for trs in self.cfg.transactions:
             if trs.action == TransactionAction.CASH:
                 rows = earnings.loc[trs.date :]
                 delta = self._normalize_currency(trs.amount)
@@ -66,13 +66,13 @@ class Project:
         tmp_dst = tempfile.TemporaryDirectory(suffix="." + __package__)
         shutil.copytree(src=src, dst=tmp_dst.name, dirs_exist_ok=True)
 
-        tmp_balances_view = self._money_balances.iloc[-self.days :]
+        tmp_balances_view = self._money_balances.iloc[-self.cfg.days :]
         balances = {
             "data": tmp_balances_view.values.tolist(),
             "labels": [d.strftime("%d %b %Y") for d in tmp_balances_view.index],
         }
 
-        tmp_earnings_view = self._earnings.iloc[-self.days :]
+        tmp_earnings_view = self._earnings.iloc[-self.cfg.days :]
         earnings_start = tmp_earnings_view.iloc[0]
         tmp_earnings_view = tmp_earnings_view.add(-earnings_start)
         earnings = {
@@ -97,34 +97,6 @@ class Project:
         if os.path.isdir(dst):
             dst = os.path.join(dst, os.path.basename(dst))
         shutil.move(src=tmp_dst.name, dst=dst)
-
-    def _parse_meta_attributes(self, config: Dict) -> defaultdict:
-        # This dict is structured as following:
-        #  attrs[<attribute name>][<entry>][<holding key>] = x
-        # where 0 < x <= 1
-        attrs = defaultdict(lambda: defaultdict(dict))
-
-        meta = config.get("meta")
-        if meta is None:
-            return attrs
-
-        for entry in meta:
-            if not isinstance(entry, dict) or "match" not in entry:
-                raise ValueError("Expected a matching list")
-
-            holding = self._find_matching_holding(entry["match"])
-            if holding is None:
-                raise ValueError(f"Couldn't find holding {entry['match']}")
-
-            for attr, val in entry["apply"].items():
-                if isinstance(val, str):
-                    attrs[attr][val][holding.get_key()] = 1
-
-                elif isinstance(val, dict):
-                    for k, v in val.items():
-                        v = float(v.strip("%")) / 100.0
-                        attrs[attr][k][holding.get_key()] = v
-        return attrs
 
     def _gen_all_meta_reports(self, report_dir: str) -> Dict[str, Dict]:
         reports = {}
@@ -192,7 +164,7 @@ class Project:
         plt.subplots_adjust(bottom=0.2, top=0.9)
         colors = ["red", "green", "blue", "orange"]
 
-        frames = min(self.days, df.index.size)
+        frames = min(self.cfg.days, df.index.size)
         frames = 10  # TODO rm
         start = df.index.size - frames
 
@@ -257,11 +229,11 @@ class Project:
         # Return holdings allocations including cash
         return pd.concat([allocations, cash], axis=1).fillna(0)
 
-    def _get_prices(self, config: Dict):
+    def _get_prices(self):
         prices = []
         for _, entry in self._first_holdings.items():
             price_history = self._get_holding_prices(
-                config=config, start=entry["date"], holding=entry["holding"]
+                start=entry["date"], holding=entry["holding"]
             )
             if price_history is not None:
                 prices.append(price_history)
@@ -275,80 +247,34 @@ class Project:
 
         return prices
 
-    def _match_holding(self, match_section: Dict, holding: Holding) -> bool:
-        if not isinstance(match_section, dict):
-            raise ValueError("Expected a matching list")
+    def _get_currencies(self):
+        currencies = {}
+        for holding in self._first_holdings:
+            # Try from prices
+            c = self.cfg.get_currency(holding=holding)
+            if c is not None:
+                currencies[holding.get_key()] = c
+                continue
 
-        h = holding
-        m = match_section
-        t = "ticker"
-        i = "isin"
-        n = "name"
+            # Try from Yahoo Finance
+            ticker = yf.Ticker(holding.ticker)
+            try:
+                c = Currency[ticker.info['currency']]
+                currencies[holding.get_key()] = c
+            except KeyError:
+                pass
 
-        return (
-            (m.get(t) is not None and m[t].strip() == getattr(h, t))
-            or (m.get(i) is not None and m[i].strip() == getattr(h, i))
-            or (m.get(n) is not None and m[n].strip() == getattr(h, n))
-        )
+            # Try from transactions
+            for trs in self.cfg.transactions_by_holding(holding=holding):
+                if trs.price is not None:
+                    currencies[holding.get_key()] = trs.price.currency
 
-    def _find_matching_holding(self, match_section: Dict) -> Holding:
-        if not isinstance(match_section, dict):
-            raise ValueError("Expected a matching list")
+        return currencies
 
-        for entry in self._first_holdings.values():
-            if self._match_holding(
-                match_section=match_section, holding=entry["holding"]
-            ):
-                return entry["holding"]
 
-    def _find_matching_entry(self, config_section: List[Dict], holding: Holding):
-        for entry in config_section:
-            if not isinstance(entry, dict) or "match" not in entry:
-                raise ValueError("Expected a matching list")
-            if not isinstance(entry["match"], dict):
-                raise ValueError("A match section must contain key,value pairs")
+    def _get_holding_prices(self, start: datetime, holding: Holding):
 
-            if self._match_holding(match_section=entry["match"], holding=holding):
-                return entry
-
-    def _try_get_holding_prices_from_cfg(
-        self, config: Dict, start: datetime, holding: Holding
-    ):
-        # If prices are provided use those (missing values are interpolated)
-        if "prices" not in config:
-            return
-
-        if not isinstance(config["prices"], list):
-            raise ValueError("Prices section must contain a matching list")
-
-        match = self._find_matching_entry(
-            config_section=config["prices"], holding=holding
-        )
-
-        if match is None:
-            return
-
-        if "file" not in match:
-            raise ValueError("Prices entries must contain a file field")
-
-        index = pd.date_range(start=start, end=datetime.now(), freq="D")
-        prices = pd.Series(index=index, dtype=np.float64)
-        prices.name = holding.get_key()
-
-        with open(match["file"]) as csvfile:
-            for row in list(csv.DictReader(csvfile)):
-                date = dateutil.parser.parse(row["date"], dayfirst=True)
-                price = Price.from_str(price=row["price"])
-                if date >= start:
-                    prices[date] = price.amount
-
-        return prices
-
-    def _get_holding_prices(self, config: Dict, start: datetime, holding: Holding):
-
-        prices = self._try_get_holding_prices_from_cfg(
-            config=config, start=start, holding=holding
-        )
+        prices = self.cfg.get_prices(holding=holding, start=start)
         if prices is not None:
             log_info(f"Using user-provided prices for {holding.get_key()}")
             return prices
@@ -371,118 +297,24 @@ class Project:
         prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 
-        for trs in self.transactions:
-            if not holding.match_transaction(transaction=trs) or trs.price is None:
+        for trs in self.cfg.transactions_by_holding(holding=holding):
+            if trs.price is None:
                 continue
             prices[trs.date] = trs.price.amount
 
         return prices
 
     def _get_balances(self) -> Dict[datetime, Balance]:
-        if not self.transactions:
+        if not self.cfg.transactions:
             return {}
 
         balances = {}
 
-        start_date = self.transactions[0].date
+        start_date = self.cfg.transactions[0].date
         last_balance = Balance(date=start_date)
 
-        for trs in self.transactions:
+        for trs in self.cfg.transactions:
             last_balance = last_balance.process_transaction(trs)
             balances[last_balance.date] = last_balance
 
         return balances
-
-    def _load_transactions(self, config: Dict) -> List[Transaction]:
-        transactions = []
-
-        if "transactions" not in config:
-            return transactions
-
-        for entry in config["transactions"]:
-            loader = entry["format"]
-            if loader == "standard":
-                transactions.extend(
-                    self._load_transactions_standard(filename=entry["file"])
-                )
-            elif loader == "schwab":
-                transactions.extend(
-                    self._load_transactions_schwab(filename=entry["file"])
-                )
-            else:
-                raise ValueError(f"Unsupported transactions' format {loader}")
-
-        return sorted(transactions, key=lambda t: t.date)
-
-    def _load_transactions_standard(self, filename: str) -> List[Transaction]:
-        trs = []
-        with open(filename) as csvfile:
-            for row in list(csv.DictReader(csvfile)):
-                date = datetime.strptime(row["date"], "%d/%m/%Y")
-                action = TransactionAction(row["action"])
-                price_str = row["price"]
-                price = Price.from_str(price_str) if price_str else None
-
-                fees_str = row["fees"]
-                fees = Price.from_str(fees_str) if fees_str else None
-
-                quantity_str = row["quantity"]
-                quantity = float(quantity_str) if quantity_str else None
-
-                amount_str = row["amount"]
-                amount = Price.from_str(amount_str) if amount_str else None
-
-                trs.append(
-                    Transaction(
-                        action=action,
-                        date=date,
-                        ticker=row["ticker"] or None,
-                        name=row["name"],
-                        price=price,
-                        quantity=quantity,
-                        fees=fees,
-                        amount=amount,
-                    )
-                )
-        return trs
-
-    def _load_transactions_schwab(self, filename: str) -> List[Transaction]:
-        trs = []
-        with open(filename) as csvfile:
-            # skip first line, which contains the document title
-            next(csvfile, None)
-
-            # skip last line, which contains the total
-            for row in list(csv.DictReader(csvfile))[:-1]:
-                # dates are sometime expressed as "mm/dd/yyyy as of mm/dd/yyy"
-                # in which case we pick the first date
-                date_str = row["Date"].split(" ")[0]
-                date = datetime.strptime(date_str, "%m/%d/%Y")
-
-                action = TransactionAction.from_schwab_action(row["Action"])
-
-                price_str = row["Price"]
-                price = Price.from_str(price_str) if price_str else None
-
-                fees_str = row["Fees & Comm"]
-                fees = Price.from_str(fees_str) if fees_str else None
-
-                quantity_str = row["Quantity"]
-                quantity = float(quantity_str) if quantity_str else None
-
-                amount_str = row["Amount"]
-                amount = Price.from_str(amount_str) if amount_str else None
-
-                trs.append(
-                    Transaction(
-                        action=action,
-                        date=date,
-                        ticker=row["Symbol"] or None,
-                        name=row["Description"],
-                        price=price,
-                        quantity=quantity,
-                        fees=fees,
-                        amount=amount,
-                    )
-                )
-        return trs
