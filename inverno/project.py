@@ -27,15 +27,17 @@ class Project:
         self._dst_currency_rates = CurrencyRates().get_rates(self.cfg.currency.name)
 
         # Maps holdings to their currency
-        self._holding_to_currency = {}
 
         self.balances = self._get_balances()
         self._first_holdings = self._get_first_holdings()
+        self._holding_to_currency = self._get_currencies()
         self._prices = self._get_prices()
         self._allocations = self._get_allocations()
         self._money_balances = self._allocations.sum(axis=1)
         self._earnings = self._get_earnings()
-        self._meta = self.cfg.get_meta_attributes(self._first_holdings)
+        self._meta = self.cfg.get_meta_attributes(
+            [h["holding"] for h in self._first_holdings.values()]
+        )
         self.gen_report(dst="./qwe")
 
     def _normalize_currency(self, price: Price):
@@ -55,7 +57,10 @@ class Project:
             elif trs.action == TransactionAction.VEST:
                 rows = earnings.loc[trs.date :]
                 price = self._prices.loc[trs.date :][trs.get_holding_key()].iloc[0]
-                delta = trs.quantity * price  # TODO convert currency
+                holding_cur = self._holding_to_currency[trs.get_holding_key()]
+                delta = self._normalize_currency(
+                    Price(currency=holding_cur, amount=trs.quantity * price)
+                )
                 earnings.loc[trs.date :] = rows.add(-delta)
 
         return earnings
@@ -249,7 +254,19 @@ class Project:
 
     def _get_currencies(self):
         currencies = {}
-        for holding in self._first_holdings:
+        for entry in self._first_holdings.values():
+            holding = entry["holding"]
+            log_info(f"Getting currency for {holding.get_key()}")
+
+            # Try from transactions
+            for trs in self.cfg.transactions_by_holding(holding=holding):
+                if trs.price is not None:
+                    currencies[holding.get_key()] = trs.price.currency
+                    break
+
+            if holding.get_key() in currencies:
+                continue
+
             # Try from prices
             c = self.cfg.get_currency(holding=holding)
             if c is not None:
@@ -257,20 +274,18 @@ class Project:
                 continue
 
             # Try from Yahoo Finance
-            ticker = yf.Ticker(holding.ticker)
-            try:
-                c = Currency[ticker.info['currency']]
-                currencies[holding.get_key()] = c
-            except KeyError:
-                pass
+            if holding.ticker is not None:
+                ticker = yf.Ticker(holding.ticker)
+                try:
+                    c = Currency[ticker.info["currency"]]
+                    currencies[holding.get_key()] = c
+                    continue
+                except KeyError:
+                    pass
 
-            # Try from transactions
-            for trs in self.cfg.transactions_by_holding(holding=holding):
-                if trs.price is not None:
-                    currencies[holding.get_key()] = trs.price.currency
+            raise ValueError(f"Couldn't determine currency for {holding.get_key()}")
 
         return currencies
-
 
     def _get_holding_prices(self, start: datetime, holding: Holding):
 

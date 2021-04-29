@@ -10,8 +10,8 @@ from .price import Price, Currency
 from .transaction import Transaction, TransactionAction
 from .holding import Holding
 
-class Config:
 
+class Config:
     def __init__(self, path: str):
         with open(path) as fd:
             self._cfg = yaml.load(fd, Loader=yaml.SafeLoader)
@@ -21,11 +21,11 @@ class Config:
 
     @property
     def days(self) -> int:
-        return 100 # TODO get from config
+        return 100  # TODO get from config
 
     @property
     def currency(self) -> Currency:
-        return Currency.USD # TODO get from config
+        return Currency.USD  # TODO get from config
 
     @property
     def transactions(self) -> List[Transaction]:
@@ -33,11 +33,12 @@ class Config:
             self._transactions = self._load_transactions()
         return self._transactions
 
-    def transactions_by_holding(self, holding: Holding) -> Generator[Transaction, None, None]:
+    def transactions_by_holding(
+        self, holding: Holding
+    ) -> Generator[Transaction, None, None]:
         for trs in self.transactions:
             if holding.match_transaction(transaction=trs):
                 yield trs
-
 
     def _match_holding(self, match_section: Dict, holding: Holding) -> bool:
         if not isinstance(match_section, dict):
@@ -82,18 +83,18 @@ class Config:
 
         if "file" not in match:
             raise ValueError("Prices entries must contain a file field")
-    
+
         return match["file"]
 
-    def _find_matching_holding(self, match_section: Dict, holdings: List[Holding]) -> Holding:
+    def _find_matching_holding(
+        self, match_section: Dict, holdings: List[Holding]
+    ) -> Holding:
         if not isinstance(match_section, dict):
             raise ValueError("Expected a matching list")
 
-        for entry in holdings:
-            if self._match_holding(
-                match_section=match_section, holding=entry["holding"]
-            ):
-                return entry["holding"]
+        for holding in holdings:
+            if self._match_holding(match_section=match_section, holding=holding):
+                return holding
 
     def get_meta_attributes(self, holdings: List[Holding]) -> defaultdict:
         # This dict is structured as following:
@@ -133,7 +134,9 @@ class Config:
                 price = Price.from_str(price=row["price"])
                 return price.currency
 
-    def get_prices(self, holding: Holding, start: Optional[datetime] = None) -> Optional[pd.DataFrame]:
+    def get_prices(
+        self, holding: Holding, start: Optional[datetime] = None
+    ) -> Optional[pd.DataFrame]:
 
         path = self._get_prices_file(holding=holding)
         if path is None:
@@ -244,3 +247,5 @@ class Config:
                 )
             else:
                 raise ValueError(f"Unsupported transactions' format {loader}")
+
+        return list(sorted(transactions, key=lambda trs: trs.date))
