@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Generator
+from typing import List, Dict, Optional, Generator, Any
 import csv
 import yaml
 from collections import defaultdict
@@ -19,13 +19,24 @@ class Config:
         self._prices = None
         self._holding_to_currency = {}
 
+    def _get_opt(self, name: str) -> Any:
+        opt = {}
+        if "options" in self._cfg:
+            opt = self._cfg["options"]
+        return opt.get(name)
+
     @property
     def days(self) -> int:
-        return 100  # TODO get from config
+        """ Number of days to analyse """
+        return self._get_opt("days") or 90
 
     @property
     def currency(self) -> Currency:
-        return Currency.USD  # TODO get from config
+        """ Base currency to use """
+        curr = self._get_opt("currency")
+        if curr is None:
+            return Currency.USD
+        return Currency[curr]
 
     @property
     def transactions(self) -> List[Transaction]:
