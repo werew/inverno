@@ -1,8 +1,12 @@
+"""
+Config handling
+"""
+
 from typing import List, Dict, Optional, Generator, Any
-import csv
-import yaml
 from collections import defaultdict
+import csv
 from datetime import datetime
+import yaml
 import pandas as pd
 import numpy as np
 import dateutil.parser
@@ -12,6 +16,8 @@ from .holding import Holding
 
 
 class Config:
+    """ Utility class representing a yaml project config """
+
     def __init__(self, path: str):
         with open(path) as fd:
             self._cfg = yaml.load(fd, Loader=yaml.SafeLoader)
@@ -40,6 +46,7 @@ class Config:
 
     @property
     def transactions(self) -> List[Transaction]:
+        """ All transactions ever done (random order) """
         if self._transactions is None:
             self._transactions = self._load_transactions()
         return self._transactions
@@ -47,6 +54,7 @@ class Config:
     def transactions_by_holding(
         self, holding: Holding
     ) -> Generator[Transaction, None, None]:
+        """ All transactions ever done for the given holding """
         for trs in self.transactions:
             if holding.match_transaction(transaction=trs):
                 yield trs
@@ -108,7 +116,16 @@ class Config:
                 return holding
 
     def get_meta_attributes(self, holdings: List[Holding]) -> defaultdict:
-        # This dict is structured as following:
+        """ 
+        Gets all meta attributes for the given list of holdings
+        The returned attrs dict is structured as follows:
+          attrs[<attribute name>][<entry>][<holding key>] = x
+        where 0 < x <= 1.
+
+        For instance, a meta attr "type: equity" will result in:
+          attrs["type"]["equity"][<holding key>] = 1
+        """
+        # This dict is structured as follows:
         #  attrs[<attribute name>][<entry>][<holding key>] = x
         # where 0 < x <= 1
         attrs = defaultdict(lambda: defaultdict(dict))
@@ -136,6 +153,7 @@ class Config:
         return attrs
 
     def get_currency(self, holding: Holding) -> Optional[Currency]:
+        """ Currency for the given holding (if provided) """
         path = self._get_prices_file(holding=holding)
         if path is None:
             return
@@ -148,6 +166,7 @@ class Config:
     def get_prices(
         self, holding: Holding, start: Optional[datetime] = None
     ) -> Optional[pd.DataFrame]:
+        """ Prices history for the given holding (if provided) """
 
         path = self._get_prices_file(holding=holding)
         if path is None:
