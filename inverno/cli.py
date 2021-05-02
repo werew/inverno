@@ -7,5 +7,10 @@ def main():
 
 @main.command("make_report")
 @click.argument("config")
-def make_report(config: str):
+@click.argument("dest")
+def make_report(config: str, dest: str):
+    """
+    Generate an html report from a config
+    """
     proj = Project(config=config)
+    proj.gen_report(dest)

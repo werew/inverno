@@ -1,5 +1,5 @@
 """
-Config handling
+Config
 """
 
 from typing import List, Dict, Optional, Generator, Any
@@ -116,7 +116,7 @@ class Config:
                 return holding
 
     def get_meta_attributes(self, holdings: List[Holding]) -> defaultdict:
-        """ 
+        """
         Gets all meta attributes for the given list of holdings
         The returned attrs dict is structured as follows:
           attrs[<attribute name>][<entry>][<holding key>] = x
@@ -125,9 +125,6 @@ class Config:
         For instance, a meta attr "type: equity" will result in:
           attrs["type"]["equity"][<holding key>] = 1
         """
-        # This dict is structured as follows:
-        #  attrs[<attribute name>][<entry>][<holding key>] = x
-        # where 0 < x <= 1
         attrs = defaultdict(lambda: defaultdict(dict))
 
         meta = self._cfg.get("meta")

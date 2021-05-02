@@ -1,4 +1,8 @@
-from typing import Dict, List
+"""
+Project
+"""
+
+from typing import Dict
 from datetime import datetime
 from collections import defaultdict
 import shutil
@@ -20,27 +24,46 @@ from .config import Config
 
 
 class Project:
+    """
+    Root class for handling a project and the creation of a report
+    """
+
     def __init__(self, config: str):
 
         self.cfg = Config(path=config)
 
+        # Conversion rates to the dest currency
         self._dst_currency_rates = CurrencyRates().get_rates(self.cfg.currency.name)
 
-        # Maps holdings to their currency
-
+        # Balances after each transaction (max one balance per day)
         self.balances = self._get_balances()
+
+        # For each holding identity (key) this list contains the
+        # first one ever hold
         self._first_holdings = self._get_first_holdings()
+
+        # Maps holdings to their currency
         self._holding_to_currency = self._get_currencies()
+
+        # Daily prices for every holding
         self._prices = self._get_prices()
+
+        # Daily allocations percentages for each holding
         self._allocations = self._get_allocations()
+
+        # Daily balance as cash value
         self._money_balances = self._allocations.sum(axis=1)
+
+        # Day by day earning/losses
         self._earnings = self._get_earnings()
+
+        # All meta attributes
         self._meta = self.cfg.get_meta_attributes(
             [h["holding"] for h in self._first_holdings.values()]
         )
-        self.gen_report(dst="./qwe")
 
     def _normalize_currency(self, price: Price):
+        """ Convert price to dest currency """
         rate = self._dst_currency_rates.get(price.currency.name)
         if rate is None:
             raise ValueError(f"Unsupported currency {price.currency.name}")
@@ -50,10 +73,13 @@ class Project:
         earnings = self._money_balances.copy()
 
         for trs in self.cfg.transactions:
+            # Discount cash put into the account
             if trs.action == TransactionAction.CASH:
                 rows = earnings.loc[trs.date :]
                 delta = self._normalize_currency(trs.amount)
                 earnings.loc[trs.date :] = rows.add(-delta)
+
+            # Discount vested stock (as it is not earning from investiment)
             elif trs.action == TransactionAction.VEST:
                 rows = earnings.loc[trs.date :]
                 price = self._prices.loc[trs.date :][trs.get_holding_key()].iloc[0]
@@ -66,17 +92,21 @@ class Project:
         return earnings
 
     def gen_report(self, dst: str):
+        """ Create an html report at the given destination """
+
         # First we copy the html dir into a tmp folder
         src = os.path.join(os.path.dirname(__file__), "html")
         tmp_dst = tempfile.TemporaryDirectory(suffix="." + __package__)
         shutil.copytree(src=src, dst=tmp_dst.name, dirs_exist_ok=True)
 
+        # Balances graph
         tmp_balances_view = self._money_balances.iloc[-self.cfg.days :]
         balances = {
             "data": tmp_balances_view.values.tolist(),
             "labels": [d.strftime("%d %b %Y") for d in tmp_balances_view.index],
         }
 
+        # Earning graph
         tmp_earnings_view = self._earnings.iloc[-self.cfg.days :]
         earnings_start = tmp_earnings_view.iloc[0]
         tmp_earnings_view = tmp_earnings_view.add(-earnings_start)
@@ -85,8 +115,10 @@ class Project:
             "labels": [d.strftime("%d %b %Y") for d in tmp_earnings_view.index],
         }
 
+        # All attributes reports
         meta_reports = self._gen_all_meta_reports(report_dir=tmp_dst.name)
 
+        # Generate report
         jinja_env = Environment(
             loader=PackageLoader("inverno", "html"),
             autoescape=select_autoescape(["html", "xml"]),
@@ -98,7 +130,7 @@ class Project:
             meta_reports=meta_reports, balances=balances, earnings=earnings
         ).dump(index_path)
 
-        # The report is ready, move it to dst
+        # Move report to dst
         if os.path.isdir(dst):
             dst = os.path.join(dst, os.path.basename(dst))
         shutil.move(src=tmp_dst.name, dst=dst)
@@ -111,7 +143,7 @@ class Project:
 
             df = self._gen_meta_attr_df(attribute=attr)
 
-            # Allocation
+            # Get allocation from last (more recent) row
             allocation = df.tail(1).values.tolist()[0]
             reports[attr].append(
                 {
@@ -122,7 +154,7 @@ class Project:
                 }
             )
 
-            # Allocation history
+            # Generate animated allocation history
             src = os.path.join("media", f"{attr}_plot_anim.mp4")
             plot_anim_path = os.path.join(report_dir, src)
             self._gen_animated_plot(df=df, dst=plot_anim_path)
@@ -167,10 +199,19 @@ class Project:
         fig = plt.figure()
         plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
         plt.subplots_adjust(bottom=0.2, top=0.9)
-        colors = ["red", "green", "blue", "orange"]
+        colors = [
+            "red",
+            "green",
+            "blue",
+            "orange",
+            "black",
+            "violet",
+            "brown",
+            "yellow",
+            "purple",
+        ]
 
         frames = min(self.cfg.days, df.index.size)
-        frames = 10  # TODO rm
         start = df.index.size - frames
 
         def update_frame(i):
@@ -218,8 +259,7 @@ class Project:
         # Apply prices
         allocations *= self._prices
 
-        # For each column, apply conversion rate to USD
-        # TODO select currency
+        # For each column, apply conversion rate
         for key in self._first_holdings:
             currency = holdings_currencies.get(key)
             if currency is None:
@@ -241,13 +281,16 @@ class Project:
                 start=entry["date"], holding=entry["holding"]
             )
             if price_history is not None:
+                if all([np.isnan(p) for p in price_history.tail(7)]):
+                    log_warning(
+                        f"Most recent price is older than one week for {entry['holding'].get_key()}"
+                    )
                 prices.append(price_history)
 
         # Put all together in a single dataframe
         prices = pd.concat(prices, axis=1, join="outer")
 
         # Use linear interpolation to cover NaNs
-        # TODO make interpolation optional
         prices = prices.interpolate(method="time", axis=0, limit_direction="both")
 
         return prices
