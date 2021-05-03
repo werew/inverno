@@ -19,7 +19,8 @@ from .transaction import TransactionAction
 from .balance import Balance
 from .price import Price, Currency
 from .common import log_info, log_warning
-from .holding import Holding, holdings_currencies
+from .holding import Holding
+from .analysis import Analysis
 from .config import Config
 
 
@@ -36,7 +37,7 @@ class Project:
         self._dst_currency_rates = CurrencyRates().get_rates(self.cfg.currency.name)
 
         # Balances after each transaction (max one balance per day)
-        self.balances = self._get_balances()
+        self.balances = Balance.get_balances(transactions=self.cfg.transactions)
 
         # For each holding identity (key) this list contains the
         # first one ever hold
@@ -48,39 +49,78 @@ class Project:
         # Daily prices for every holding
         self._prices = self._get_prices()
 
-        # Daily allocations percentages for each holding
-        self._allocations = self._get_allocations()
-
-        # Daily balance as cash value
-        self._money_balances = self._allocations.sum(axis=1)
-
-        # Day by day earning/losses
-        self._earnings = self._get_earnings()
-
         # All meta attributes
         self._meta = self.cfg.get_meta_attributes(
             [h["holding"] for h in self._first_holdings.values()]
         )
 
-    def _get_earnings(self):
-        earnings = self._money_balances.copy()
+    def _get_attrs_report_data(self, analysis: Analysis, allocations: pd.DataFrame):
+        reports = {}
+        for attr in self._meta:
+            log_info(f"Generating report for attribute {attr}")
+            reports[attr] = []
 
-        for trs in self.cfg.transactions:
-            # Discount cash put into the account
-            if trs.action == TransactionAction.CASH:
-                rows = earnings.loc[trs.date :]
-                delta = trs.amount.normalize_currency(self._dst_currency_rates)
-                earnings.loc[trs.date :] = rows.add(-delta)
+            attr_alloc = analysis.get_attr_allocations(
+                allocations=allocations, attr_weights=self._meta[attr]
+            )
 
-            # Discount vested stock (as it is not earning from investiment)
-            elif trs.action == TransactionAction.VEST:
-                rows = earnings.loc[trs.date :]
-                price = self._prices.loc[trs.date :][trs.get_holding_key()].iloc[0]
-                holding_cur = self._holding_to_currency[trs.get_holding_key()]
-                delta = Price(currency=holding_cur, amount=trs.quantity * price).normalize_currency(self._dst_currency_rates)
-                earnings.loc[trs.date :] = rows.add(-delta)
+            # Get current allocation from last (more recent) row
+            last_alloc = attr_alloc.tail(1).values.tolist()[0]
+            reports[attr].append(
+                {
+                    "type": "piechart",
+                    "name": "Allocation",
+                    "data": last_alloc,
+                    "labels": list(attr_alloc.columns),
+                }
+            )
 
-        return earnings
+            # Allocation history
+            # last_alloc = attr_alloc.tail(1).values.tolist()[0]
+            # reports[attr].append(
+            #    {
+            #        "type": "piechart",
+            #        "name": "Allocation",
+            #        "data": last_alloc,
+            #        "labels": list(attr_alloc.columns),
+            #    }
+            # )
+
+        return reports
+
+    def _get_report_data(self):
+        analysis = Analysis(
+            prices=self._prices,
+            conv_rates=self._dst_currency_rates,
+            holdings_currencies=self._holding_to_currency,
+        )
+
+        # Balances graph
+        allocations = analysis.get_allocations(
+            balances=self.balances, ndays=self.cfg.days
+        )
+        balances = {
+            "data": allocations.sum(axis=1).values.tolist(),
+            "labels": [d.strftime("%d %b %Y") for d in allocations.index],
+        }
+
+        # Earning graph
+        earnings = analysis.get_earnings(
+            allocations=allocations,
+            transactions=self.cfg.transactions,
+            ndays=self.cfg.days,
+        )
+        earnings = {
+            "data": earnings.values.tolist(),
+            "labels": [d.strftime("%d %b %Y") for d in earnings.index],
+        }
+
+        # Generate report data for all known attributes
+        attrs_report = self._get_attrs_report_data(
+            analysis=analysis, allocations=allocations
+        )
+
+        return {"balances": balances, "earnings": earnings, "attrs": attrs_report}
 
     def gen_report(self, dst: str):
         """ Create an html report at the given destination """
@@ -90,24 +130,8 @@ class Project:
         tmp_dst = tempfile.TemporaryDirectory(suffix="." + __package__)
         shutil.copytree(src=src, dst=tmp_dst.name, dirs_exist_ok=True)
 
-        # Balances graph
-        tmp_balances_view = self._money_balances.iloc[-self.cfg.days :]
-        balances = {
-            "data": tmp_balances_view.values.tolist(),
-            "labels": [d.strftime("%d %b %Y") for d in tmp_balances_view.index],
-        }
-
-        # Earning graph
-        tmp_earnings_view = self._earnings.iloc[-self.cfg.days :]
-        earnings_start = tmp_earnings_view.iloc[0]
-        tmp_earnings_view = tmp_earnings_view.add(-earnings_start)
-        earnings = {
-            "data": tmp_earnings_view.values.tolist(),
-            "labels": [d.strftime("%d %b %Y") for d in tmp_earnings_view.index],
-        }
-
-        # All attributes reports
-        meta_reports = self._gen_all_meta_reports(report_dir=tmp_dst.name)
+        # This is the data that we will feed to the report
+        report_data = self._get_report_data()
 
         # Generate report
         jinja_env = Environment(
@@ -118,74 +142,15 @@ class Project:
         index_path = os.path.join(tmp_dst.name, "index.html")
         index_template = jinja_env.get_template(name="index.html")
         index_template.stream(
-            meta_reports=meta_reports, balances=balances, earnings=earnings
+            attrs=report_data["attrs"],
+            balances=report_data["balances"],
+            earnings=report_data["earnings"],
         ).dump(index_path)
 
         # Move report to dst
         if os.path.isdir(dst):
             dst = os.path.join(dst, os.path.basename(dst))
         shutil.move(src=tmp_dst.name, dst=dst)
-
-    def _gen_all_meta_reports(self, report_dir: str) -> Dict[str, Dict]:
-        reports = {}
-        for attr in self._meta:
-            log_info(f"Generating report for attribute {attr}")
-            reports[attr] = []
-
-            df = self._gen_meta_attr_df(attribute=attr)
-
-            # Get allocation from last (more recent) row
-            allocation = df.tail(1).values.tolist()[0]
-            reports[attr].append(
-                {
-                    "type": "piechart",
-                    "name": "Allocation",
-                    "data": allocation,
-                    "labels": list(df.columns),
-                }
-            )
-
-            # Generate animated allocation history
-            src = os.path.join("media", f"{attr}_plot_anim.mp4")
-            plot_anim_path = os.path.join(report_dir, src)
-            self._gen_animated_plot(df=df, dst=plot_anim_path)
-            reports[attr].append(
-                {"type": "video", "name": "Allocation history", "src": src}
-            )
-
-        return reports
-
-    def _gen_meta_attr_df(self, attribute: str):
-
-        columns = list(self._meta[attribute]) + ["unknown"]
-        df = pd.DataFrame(
-            0, columns=columns, index=self._allocations.index, dtype=np.float64
-        )
-
-        # Keep record of how much we allocate for each holding
-        tot_holdings = defaultdict(lambda: 0)
-
-        # Compute holdings allocations
-        for entry, values in self._meta[attribute].items():
-            for holding_key, portion in values.items():
-                df[entry] += portion * self._allocations[holding_key]
-                tot_holdings[holding_key] += portion
-
-        # Cumpute unknown allocations
-        for holding_key in self._first_holdings:
-            allocation = tot_holdings[holding_key]
-
-            if allocation > 1:
-                raise ValueError(
-                    f"Holding {holding_key} has more than 100% "
-                    f"allocation for attribute {attribute}"
-                )
-
-            elif allocation == 1:
-                continue
-
-            df["unknown"] += self._allocations[holding_key] * (1 - allocation)
-        return df
 
     def _gen_animated_plot(self, df: pd.DataFrame, dst: str):
         fig = plt.figure()
@@ -226,45 +191,6 @@ class Project:
                         "holding": holding,
                     }
         return holdings
-
-    def _get_allocations(self):
-
-        # New dataframe with the same layout of prices
-        allocations = pd.DataFrame().reindex_like(self._prices)
-        cash = pd.DataFrame(columns=["cash"], index=allocations.index, dtype=np.float64)
-
-        for balance in self.balances.values():
-            # Populate holdings columns
-            for holding in balance.holdings.values():
-                allocations.loc[balance.date, holding.get_key()] = holding.quantity
-
-            # Populate cash dataframe
-            total_cash = 0.0
-            for c in balance.cash.values():
-                total_cash += c.normalize_currency(self._dst_currency_rates)
-            cash.loc[balance.date, "cash"] = total_cash
-
-        # Fill empty slot using previous known values
-        allocations = allocations.interpolate(method="pad", axis=0)
-        cash = cash.interpolate(method="pad", axis=0)
-
-        # Apply prices
-        allocations *= self._prices
-
-        # For each column, apply conversion rate
-        for key in self._first_holdings:
-            currency = holdings_currencies.get(key)
-            if currency is None:
-                raise ValueError(f"Couldn't determine currency for holding {key}")
-
-            rate = self._dst_currency_rates.get(currency.name)
-            if rate is None:
-                raise ValueError(f"Unsupported currency {currency.name}")
-
-            allocations[key] /= rate
-
-        # Return holdings allocations including cash
-        return pd.concat([allocations, cash], axis=1).fillna(0)
 
     def _get_prices(self):
         prices = []
@@ -354,18 +280,3 @@ class Project:
             prices[trs.date] = trs.price.amount
 
         return prices
-
-    def _get_balances(self) -> Dict[datetime, Balance]:
-        if not self.cfg.transactions:
-            return {}
-
-        balances = {}
-
-        start_date = self.cfg.transactions[0].date
-        last_balance = Balance(date=start_date)
-
-        for trs in self.cfg.transactions:
-            last_balance = last_balance.process_transaction(trs)
-            balances[last_balance.date] = last_balance
-
-        return balances

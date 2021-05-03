@@ -8,6 +8,7 @@ class Currency(Enum):
     USD = "$"
     GBP = "£"
     EUR = "€"
+    TWD = "NT$"
 
 
 @total_ordering
