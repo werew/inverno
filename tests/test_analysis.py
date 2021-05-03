@@ -1,12 +1,13 @@
 from typing import Dict, List
+from datetime import datetime
 import pytest
 import pandas as pd
-from datetime import datetime
 from inverno.price import Currency, Price
 from inverno.analysis import Analysis
 from inverno.balance import Balance
-from inverno.holding import Holding
 from inverno.transaction import Transaction, TransactionAction
+
+# pylint: disable=missing-function-docstring
 
 
 def _get_transactions(
@@ -169,3 +170,30 @@ def test_earnings(analysis_data):
     )
     expected = pd.Series(data=[0.0, 3.0], index=earnings.index)
     assert earnings.equals(expected)
+
+
+def test_attrs_allocations(analysis_data):
+    data = analysis_data
+    analysis = Analysis(
+        prices=data["prices"],
+        conv_rates=data["conv_rates"],
+        holdings_currencies=data["holdings_currencies"],
+    )
+
+    attr_weights = {
+        "A": {"FB": 0.75, "TSM": 0.5},
+        "B": {"TSM": 0.5},
+    }
+
+    transactions = data["transactions"]["base"]
+    balances = Balance.get_balances(transactions=transactions)
+    allocations = analysis.get_allocations(balances=balances.values())
+    attrs_alloc = analysis.get_attr_allocations(
+        allocations=allocations, attr_weights=attr_weights
+    )
+    df = pd.DataFrame(
+        columns=list(attr_weights.keys()) + ["unknown"],
+        index=data["prices"].index,
+        data=[[4.0, 1.0, 1.0], [6.5, 0.5, 2.0]],
+    )
+    assert df.equals(attrs_alloc)
