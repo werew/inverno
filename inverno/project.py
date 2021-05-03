@@ -62,13 +62,6 @@ class Project:
             [h["holding"] for h in self._first_holdings.values()]
         )
 
-    def _normalize_currency(self, price: Price):
-        """ Convert price to dest currency """
-        rate = self._dst_currency_rates.get(price.currency.name)
-        if rate is None:
-            raise ValueError(f"Unsupported currency {price.currency.name}")
-        return price.amount / rate
-
     def _get_earnings(self):
         earnings = self._money_balances.copy()
 
@@ -76,7 +69,7 @@ class Project:
             # Discount cash put into the account
             if trs.action == TransactionAction.CASH:
                 rows = earnings.loc[trs.date :]
-                delta = self._normalize_currency(trs.amount)
+                delta = trs.amount.normalize_currency(self._dst_currency_rates)
                 earnings.loc[trs.date :] = rows.add(-delta)
 
             # Discount vested stock (as it is not earning from investiment)
@@ -84,9 +77,7 @@ class Project:
                 rows = earnings.loc[trs.date :]
                 price = self._prices.loc[trs.date :][trs.get_holding_key()].iloc[0]
                 holding_cur = self._holding_to_currency[trs.get_holding_key()]
-                delta = self._normalize_currency(
-                    Price(currency=holding_cur, amount=trs.quantity * price)
-                )
+                delta = Price(currency=holding_cur, amount=trs.quantity * price).normalize_currency(self._dst_currency_rates)
                 earnings.loc[trs.date :] = rows.add(-delta)
 
         return earnings
@@ -186,7 +177,8 @@ class Project:
 
             if allocation > 1:
                 raise ValueError(
-                    f"Holding {holding_key} has more than 100% allocation for attribute {attribute}"
+                    f"Holding {holding_key} has more than 100% "
+                    f"allocation for attribute {attribute}"
                 )
 
             elif allocation == 1:
@@ -249,7 +241,7 @@ class Project:
             # Populate cash dataframe
             total_cash = 0.0
             for c in balance.cash.values():
-                total_cash += self._normalize_currency(c)
+                total_cash += c.normalize_currency(self._dst_currency_rates)
             cash.loc[balance.date, "cash"] = total_cash
 
         # Fill empty slot using previous known values
@@ -283,7 +275,8 @@ class Project:
             if price_history is not None:
                 if all([np.isnan(p) for p in price_history.tail(7)]):
                     log_warning(
-                        f"Most recent price is older than one week for {entry['holding'].get_key()}"
+                        "Most recent price is older than one "
+                        f"week for {entry['holding'].get_key()}"
                     )
                 prices.append(price_history)
 

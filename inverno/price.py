@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 import re
 from functools import total_ordering
 
@@ -17,7 +17,7 @@ class Price:
         self.amount = amount
 
     @staticmethod
-    def from_str(price: str, currency: Optional[Currency] = None):
+    def from_str(price: str, currency: Optional[Currency] = None) -> "Price":
         match = re.search(r"[\d\.,]+", price)
         if match is None:
             raise ValueError(f'Cannot find valid price in string "{price}"')
@@ -39,6 +39,13 @@ class Price:
                 raise ValueError(f"Couldn't get currency for price {str}")
 
         return Price(currency=currency, amount=amount)
+
+    def normalize_currency(self, conversion_rates: Dict[str,float]) -> float:
+        """ Convert price to dest currency """
+        rate = conversion_rates.get(self.currency.name)
+        if rate is None:
+            raise ValueError(f"Unsupported currency {self.currency.name}")
+        return self.amount / rate
 
     def __repr__(self):
         return f"{self.amount} {self.currency.name}"
