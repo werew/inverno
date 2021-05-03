@@ -1,10 +1,4 @@
-"""
-Project
-"""
-
-from typing import Dict
 from datetime import datetime
-from collections import defaultdict
 import shutil
 import tempfile
 import os
@@ -15,9 +9,8 @@ import matplotlib.animation as ani
 import yfinance as yf
 from forex_python.converter import CurrencyRates
 from jinja2 import Environment, PackageLoader, select_autoescape
-from .transaction import TransactionAction
 from .balance import Balance
-from .price import Price, Currency
+from .price import Currency
 from .common import log_info, log_warning
 from .holding import Holding
 from .analysis import Analysis

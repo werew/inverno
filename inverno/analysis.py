@@ -1,22 +1,10 @@
 from typing import Dict, List, Iterable, Optional
-from datetime import datetime
 from collections import defaultdict
-import shutil
-import tempfile
-import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as ani
-import yfinance as yf
-from forex_python.converter import CurrencyRates
-from jinja2 import Environment, PackageLoader, select_autoescape
 from .transaction import TransactionAction, Transaction
 from .balance import Balance
 from .price import Price, Currency
-from .common import log_info, log_warning
-from .holding import Holding
-from .config import Config
 
 
 class Analysis:
@@ -64,7 +52,9 @@ class Analysis:
         for balance in balances:
             # Populate holdings columns
             for holding in balance.holdings.values():
-                allocations.loc[pd.Timestamp(balance.date), holding.get_key()] = holding.quantity
+                allocations.loc[
+                    pd.Timestamp(balance.date), holding.get_key()
+                ] = holding.quantity
 
             # Populate cash dataframe
             total_cash = 0.0
