@@ -3,8 +3,8 @@ Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,Bli
 Chart.defaults.global.defaultFontColor = '#858796';
 
 // Pie Charts
-const BACKGROUND_COLORS = ['#4e73df', '#1cc88a', '#36b9cc'];
-const HOVER_BACKFROUND_COLORS = ['#2e59d9', '#17a673', '#2c9faf'];
+const BACKGROUND_COLORS = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e','#e70000','#e15d03', '#fff69a',];
+const HOVER_BACKFROUND_COLORS = ['#2e59d9', '#17a673', '#2c9faf', '#deaf38', '#ce0018', '#ca5302', '#e5dd8a'];
 
 for (const [key, value] of Object.entries(piecharts)) {
     console.log(`${key}: ${value}`);
