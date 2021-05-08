@@ -1,0 +1,43 @@
+# My test project
+
+transactions:
+  - format: standard
+    file: my_transactions.csv
+        #prices:
+        #  - match:
+        #      name: My Fund
+        #    file: my_found_prices.csv
+meta:
+  - match:
+      ticker: FB 
+    apply:
+      sector: Communication Services
+      cap: large
+      type: equity
+  - match:
+      ticker: GOOGL
+    apply:
+      sector: Communication Services
+      cap: large
+      type: equity
+  - match:
+      ticker: AAPL
+    apply:
+      sector: Information Technology
+      cap: large
+      type: equity
+  - match:
+      name: My Fund
+    apply:
+      sector:
+          Information Technology: 20%
+          Communication Services: 10%
+          Consumer Staples: 30%
+          Healthcare: 20%
+      cap:
+        small: 20%
+        mid: 40%
+        big: 40%
+      type:
+        equity: 80%
+        bonds: 20%
