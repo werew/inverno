@@ -2,7 +2,7 @@ from typing import Optional, Dict, List
 import copy
 from datetime import datetime
 from .transaction import Transaction, TransactionAction
-from .price import Price, Currency
+from .price import Currency
 from .holding import Holding
 
 

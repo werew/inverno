@@ -90,7 +90,7 @@ class Project:
 
         # Balances graph
         allocations = analysis.get_allocations(
-            balances=self.balances, ndays=self.cfg.days
+            balances=self.balances.values(), ndays=self.cfg.days
         )
         balances = {
             "data": allocations.sum(axis=1).values.tolist(),
@@ -242,12 +242,17 @@ class Project:
 
         return currencies
 
-    def _get_holding_prices(self, start: datetime, holding: Holding):
+    def _get_holding_prices(self, start: datetime, holding: Holding) -> pd.Series:
+        def _reindex(s: pd.Series):
+            return s.reindex(
+                index=pd.date_range(s.index.min(), s.index.max()),
+                method="pad",
+            )
 
         prices = self.cfg.get_prices(holding=holding, start=start)
         if prices is not None:
             log_info(f"Using user-provided prices for {holding.get_key()}")
-            return prices
+            return _reindex(prices)
 
         # Try to fetch prices from Yahoo Finance
         if holding.ticker is not None:
@@ -256,7 +261,7 @@ class Project:
             prices.name = holding.get_key()
             if prices.size > 0:
                 log_info(f"Using Yahoo Finance prices for {holding.get_key()}")
-                return prices
+                return _reindex(prices)
 
         # Try to infer from transaction data
         log_warning(
@@ -272,4 +277,4 @@ class Project:
                 continue
             prices[trs.date] = trs.price.amount
 
-        return prices
+        return _reindex(prices)

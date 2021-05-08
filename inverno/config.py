@@ -228,7 +228,7 @@ class Config:
         trs = []
         with open(filename) as csvfile:
             for row in list(csv.DictReader(csvfile)):
-                date = datetime.strptime(row["date"], "%d/%m/%Y")
+                date = dateutil.parser.parse(row["date"], dayfirst=True)
                 action = TransactionAction(row["action"])
                 price_str = row["price"]
                 price = Price.from_str(price_str) if price_str else None
