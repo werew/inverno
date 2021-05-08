@@ -7,18 +7,15 @@ const BACKGROUND_COLORS = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e','#e70000',
 const HOVER_BACKFROUND_COLORS = ['#2e59d9', '#17a673', '#2c9faf', '#deaf38', '#ce0018', '#ca5302', '#e5dd8a'];
 
 for (const [key, value] of Object.entries(piecharts)) {
-    console.log(`${key}: ${value}`);
 
     const ctx = document.getElementById(key);
     let backgroundColor = [];
     let hoverBackgroundColor = [];
     for (let i = 0; i < value['data'].length; i++){
         let color_idx = i % BACKGROUND_COLORS.length;
-        console.log(color_idx);
         backgroundColor.push(BACKGROUND_COLORS[color_idx]);
         hoverBackgroundColor.push(HOVER_BACKFROUND_COLORS[color_idx]);
     }
-    console.log(backgroundColor)
 
     new Chart(ctx, {
       type: 'doughnut',
@@ -42,6 +39,12 @@ for (const [key, value] of Object.entries(piecharts)) {
           yPadding: 15,
           displayColors: false,
           caretPadding: 10,
+          callbacks: {
+            label: function(tooltipItem, chart) {
+             var val = chart.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+             return CURRENCY_SYM + number_format(val);
+            }
+        }
         },
         legend: {
           display: true 
