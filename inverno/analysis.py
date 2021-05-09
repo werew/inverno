@@ -50,6 +50,12 @@ class Analysis:
         cash = pd.DataFrame(columns=["cash"], index=allocations.index, dtype=np.float64)
 
         for balance in balances:
+            b_date = pd.Timestamp(balance.date)
+
+            # Skip balances out of bounds
+            if b_date > allocations.index.max() or b_date < allocations.index.min():
+                continue
+
             # Populate holdings columns
             for holding in balance.holdings.values():
                 allocations.loc[

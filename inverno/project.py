@@ -187,9 +187,10 @@ class Project:
 
     def _get_prices(self):
         prices = []
+        end_date = self.cfg.end_date
         for _, entry in self._first_holdings.items():
             price_history = self._get_holding_prices(
-                start=entry["date"], holding=entry["holding"]
+                start=entry["date"], end=end_date, holding=entry["holding"]
             )
             if price_history is not None:
                 if all([np.isnan(p) for p in price_history.tail(7)]):
@@ -242,14 +243,14 @@ class Project:
 
         return currencies
 
-    def _get_holding_prices(self, start: datetime, holding: Holding) -> pd.Series:
+    def _get_holding_prices(self, start: datetime, end: datetime, holding: Holding) -> pd.Series:
         def _reindex(s: pd.Series):
             return s.reindex(
                 index=pd.date_range(s.index.min(), s.index.max()),
                 method="pad",
             )
 
-        prices = self.cfg.get_prices(holding=holding, start=start)
+        prices = self.cfg.get_prices(holding=holding, start=start, end=end)
         if prices is not None:
             log_info(f"Using user-provided prices for {holding.get_key()}")
             return _reindex(prices)
@@ -257,7 +258,7 @@ class Project:
         # Try to fetch prices from Yahoo Finance
         if holding.ticker is not None:
             ticker = yf.Ticker(holding.ticker)
-            prices = ticker.history(start=start, interval="1d")["Close"]
+            prices = ticker.history(start=start, end=end, interval="1d")["Close"]
             prices.name = holding.get_key()
             if prices.size > 0:
                 log_info(f"Using Yahoo Finance prices for {holding.get_key()}")
@@ -268,7 +269,7 @@ class Project:
             f"Inferring prices from transactions for {holding.get_key()}"
             ", prices could be inaccurate"
         )
-        index = pd.date_range(start=start, end=datetime.now(), freq="D")
+        index = pd.date_range(start=start, end=end, freq="D")
         prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 

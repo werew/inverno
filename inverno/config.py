@@ -37,6 +37,15 @@ class Config:
         return self._get_opt("days") or 90
 
     @property
+    def end_date(self) -> int:
+        """ Number of days to analyse """
+        date_opt = self._get_opt("end_date")
+        if date_opt is None:
+            return datetime.now()
+
+        return dateutil.parser.parse(date_opt, dayfirst=True)
+
+    @property
     def currency(self) -> Currency:
         """ Base currency to use """
         curr = self._get_opt("currency")
@@ -161,7 +170,7 @@ class Config:
                 return price.currency
 
     def get_prices(
-        self, holding: Holding, start: Optional[datetime] = None
+        self, holding: Holding, start: datetime, end: Optional[datetime] = None,
     ) -> Optional[pd.DataFrame]:
         """ Prices history for the given holding (if provided) """
 
@@ -169,7 +178,10 @@ class Config:
         if path is None:
             return
 
-        index = pd.date_range(start=start, end=datetime.now(), freq="D")
+        if end is None:
+            end = datetime.now()
+
+        index = pd.date_range(start=start, end=end, freq="D")
         prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 
@@ -178,7 +190,7 @@ class Config:
                 date = dateutil.parser.parse(row["date"], dayfirst=True)
                 price = Price.from_str(price=row["price"])
 
-                if start is None or date >= start:
+                if date >= start and date <= end:
                     prices[date] = price.amount
 
         return prices
