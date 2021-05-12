@@ -69,15 +69,17 @@ class Project:
             )
 
             # Allocation history
-            # last_alloc = attr_alloc.tail(1).values.tolist()[0]
-            # reports[attr].append(
-            #    {
-            #        "type": "piechart",
-            #        "name": "Allocation",
-            #        "data": last_alloc,
-            #        "labels": list(attr_alloc.columns),
-            #    }
-            # )
+            reports[attr].append(
+                {
+                    "type": "areachart",
+                    "name": "Allocation history",
+                    "datasets": [
+                        {"label": c, "data": attr_alloc[c].tolist()}
+                        for c in attr_alloc.columns
+                    ],
+                    "labels": [d.strftime("%d %b %Y") for d in attr_alloc.index],
+                }
+            )
 
         return reports
 
@@ -93,7 +95,12 @@ class Project:
             balances=self.balances.values(), ndays=self.cfg.days
         )
         balances = {
-            "data": allocations.sum(axis=1).values.tolist(),
+            "datasets": [
+                {
+                    "label": "Balance",
+                    "data": allocations.sum(axis=1).values.tolist(),
+                },
+            ],
             "labels": [d.strftime("%d %b %Y") for d in allocations.index],
         }
 
@@ -104,7 +111,12 @@ class Project:
             ndays=self.cfg.days,
         )
         earnings = {
-            "data": earnings.values.tolist(),
+            "datasets": [
+                {
+                    "label": "Earnings",
+                    "data": earnings.values.tolist(),
+                },
+            ],
             "labels": [d.strftime("%d %b %Y") for d in earnings.index],
         }
 
@@ -243,7 +255,9 @@ class Project:
 
         return currencies
 
-    def _get_holding_prices(self, start: datetime, end: datetime, holding: Holding) -> pd.Series:
+    def _get_holding_prices(
+        self, start: datetime, end: datetime, holding: Holding
+    ) -> pd.Series:
         def _reindex(s: pd.Series):
             return s.reindex(
                 index=pd.date_range(s.index.min(), s.index.max()),

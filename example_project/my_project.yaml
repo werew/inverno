@@ -1,5 +1,8 @@
 # My test project
 
+options:
+  days: 90
+  end_date: 25/04/21
 transactions:
   - format: standard
     file: my_transactions.csv

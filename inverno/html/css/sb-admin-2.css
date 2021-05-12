@@ -10816,6 +10816,13 @@ a:focus {
   height: 15rem;
   width: 100%;
 }
+
+.chart-area {
+  position: relative;
+  height: 15rem;
+  width: 100%;
+}
+
 /*
 *@media (min-width: 768px) {
 *  .chart-pie {

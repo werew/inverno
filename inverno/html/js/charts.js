@@ -2,20 +2,52 @@
 Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 Chart.defaults.global.defaultFontColor = '#858796';
 
-// Pie Charts
-const BACKGROUND_COLORS = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e','#e70000','#e15d03', '#fff69a',];
-const HOVER_BACKFROUND_COLORS = ['#2e59d9', '#17a673', '#2c9faf', '#deaf38', '#ce0018', '#ca5302', '#e5dd8a'];
+const COLORS_LIGHT = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e','#e70000','#e15d03', '#fff69a',];
+const COLORS_DARK = ['#2e59d9', '#17a673', '#2c9faf', '#deaf38', '#ce0018', '#ca5302', '#e5dd8a'];
 
+function number_format(number, decimals, dec_point, thousands_sep) {
+  // *     example: number_format(1234.56, 2, ',', ' ');
+  // *     return: '1 234,56'
+  number = (number + '').replace(',', '').replace(' ', '');
+  var n = !isFinite(+number) ? 0 : +number,
+    prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+    s = '',
+    toFixedFix = function(n, prec) {
+      var k = Math.pow(10, prec);
+      return '' + Math.round(n * k) / k;
+    };
+  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+  if (s[0].length > 3) {
+    s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+  }
+  if ((s[1] || '').length < prec) {
+    s[1] = s[1] || '';
+    s[1] += new Array(prec - s[1].length + 1).join('0');
+  }
+  return s.join(dec);
+}
+
+function pick_colors(n){
+    let light = [];
+    let dark = [];
+
+    for (let i = 0; i < n; i++){
+        let color_idx = i % COLORS_LIGHT.length;
+        light.push(COLORS_LIGHT[color_idx]);
+        dark.push(COLORS_DARK[color_idx]);
+    }
+
+    return {light, dark};
+}
+
+// Pie Charts
 for (const [key, value] of Object.entries(piecharts)) {
 
     const ctx = document.getElementById(key);
-    let backgroundColor = [];
-    let hoverBackgroundColor = [];
-    for (let i = 0; i < value['data'].length; i++){
-        let color_idx = i % BACKGROUND_COLORS.length;
-        backgroundColor.push(BACKGROUND_COLORS[color_idx]);
-        hoverBackgroundColor.push(HOVER_BACKFROUND_COLORS[color_idx]);
-    }
+    let colors = pick_colors(value['data'].length);
 
     new Chart(ctx, {
       type: 'doughnut',
@@ -23,8 +55,8 @@ for (const [key, value] of Object.entries(piecharts)) {
         labels: value['labels'],
         datasets: [{
           data: value['data'],
-          backgroundColor,
-          hoverBackgroundColor,
+          backgroundColor: colors.light,
+          hoverBackgroundColor: colors.dark,
           hoverBorderColor: "rgba(234, 236, 244, 1)",
         }],
       },
@@ -56,52 +88,37 @@ for (const [key, value] of Object.entries(piecharts)) {
 
 
 // Area chart
-function number_format(number, decimals, dec_point, thousands_sep) {
-  // *     example: number_format(1234.56, 2, ',', ' ');
-  // *     return: '1 234,56'
-  number = (number + '').replace(',', '').replace(' ', '');
-  var n = !isFinite(+number) ? 0 : +number,
-    prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
-    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
-    s = '',
-    toFixedFix = function(n, prec) {
-      var k = Math.pow(10, prec);
-      return '' + Math.round(n * k) / k;
-    };
-  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
-  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
-  if (s[0].length > 3) {
-    s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
-  }
-  if ((s[1] || '').length < prec) {
-    s[1] = s[1] || '';
-    s[1] += new Array(prec - s[1].length + 1).join('0');
-  }
-  return s.join(dec);
-}
-
-function makeAreaChart(element_id, name, data, labels){
+function makeAreaChart(element_id, datasets, labels){
   var ctx = document.getElementById(element_id);
+
+  let colors = pick_colors(datasets.length);
+  console.log(colors);
+  let _datasets = [];
+  for (let i=0; i < datasets.length; i++){
+      _datasets.push(
+        {
+            label: datasets[i].label,
+            lineTension: 0.3,
+            backgroundColor: colors.light[i],
+            borderColor: colors.dark[i],
+            pointRadius: 3,
+            pointBackgroundColor: colors.dark[i],
+            pointBorderColor: colors.dark[i],
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+            pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            data: datasets[i].data,
+        }
+      );
+  }
+  console.log(_datasets)
   new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        label: name,
-        lineTension: 0.3,
-        backgroundColor: "rgba(78, 115, 223, 0.05)",
-        borderColor: "rgba(78, 115, 223, 1)",
-        pointRadius: 3,
-        pointBackgroundColor: "rgba(78, 115, 223, 1)",
-        pointBorderColor: "rgba(78, 115, 223, 1)",
-        pointHoverRadius: 3,
-        pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-        pointHoverBorderColor: "rgba(78, 115, 223, 1)",
-        pointHitRadius: 10,
-        pointBorderWidth: 2,
-        data: data,
-      }],
+      datasets: _datasets,
     },
     options: {
       maintainAspectRatio: false,
@@ -127,6 +144,7 @@ function makeAreaChart(element_id, name, data, labels){
           }
         }],
         yAxes: [{
+          stacked: true,
           ticks: {
             maxTicksLimit: 5,
             padding: 10,
@@ -172,5 +190,9 @@ function makeAreaChart(element_id, name, data, labels){
   });
 }
 
-makeAreaChart("balance_chart", "Balance", balances["data"], balances["labels"])
-makeAreaChart("earnings_chart", "Earnings", earnings["data"], earnings["labels"])
+for (const [key, value] of Object.entries(areacharts)) {
+    makeAreaChart(key, value['datasets'], value['labels']);
+}
+
+makeAreaChart("balance_chart", balances["datasets"], balances["labels"])
+makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"])
