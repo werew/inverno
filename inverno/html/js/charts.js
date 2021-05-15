@@ -88,11 +88,10 @@ for (const [key, value] of Object.entries(piecharts)) {
 
 
 // Area chart
-function makeAreaChart(element_id, datasets, labels){
+function makeAreaChart(element_id, datasets, labels, is_small, is_stacked){
   var ctx = document.getElementById(element_id);
 
   let colors = pick_colors(datasets.length);
-  console.log(colors);
   let _datasets = [];
   for (let i=0; i < datasets.length; i++){
       _datasets.push(
@@ -101,15 +100,16 @@ function makeAreaChart(element_id, datasets, labels){
             lineTension: 0.3,
             backgroundColor: colors.light[i],
             borderColor: colors.dark[i],
-            pointRadius: 3,
+            pointRadius: is_small ? 0.3 : 3,
             pointBackgroundColor: colors.dark[i],
             pointBorderColor: colors.dark[i],
-            pointHoverRadius: 3,
-            pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-            pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: colors.dark[i],
+            pointHoverBorderColor: colors.dark[i],
             pointHitRadius: 10,
             pointBorderWidth: 2,
             data: datasets[i].data,
+            fill: is_stacked,
         }
       );
   }
@@ -144,7 +144,7 @@ function makeAreaChart(element_id, datasets, labels){
           }
         }],
         yAxes: [{
-          stacked: true,
+          stacked: is_stacked,
           ticks: {
             maxTicksLimit: 5,
             padding: 10,
@@ -191,8 +191,12 @@ function makeAreaChart(element_id, datasets, labels){
 }
 
 for (const [key, value] of Object.entries(areacharts)) {
-    makeAreaChart(key, value['datasets'], value['labels']);
+    makeAreaChart(key, value['datasets'], value['labels'], true, false);
 }
 
-makeAreaChart("balance_chart", balances["datasets"], balances["labels"])
-makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"])
+for (const [key, value] of Object.entries(areacharts_stacked)) {
+    makeAreaChart(key, value['datasets'], value['labels'], true, true);
+}
+
+makeAreaChart("balance_chart", balances["datasets"], balances["labels"], false, true)
+makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], false, true)

@@ -71,13 +71,31 @@ class Project:
             # Allocation history
             reports[attr].append(
                 {
-                    "type": "areachart",
+                    "type": "areachart_stacked",
                     "name": "Allocation history",
                     "datasets": [
                         {"label": c, "data": attr_alloc[c].tolist()}
                         for c in attr_alloc.columns
                     ],
                     "labels": [d.strftime("%d %b %Y") for d in attr_alloc.index],
+                }
+            )
+
+            # Earnings
+            earnings = analysis.get_attr_earnings(
+                attr_allocations=attr_alloc,
+                transactions=self.cfg.transactions,
+                attr_weights=self._meta[attr],
+            )
+            reports[attr].append(
+                {
+                    "type": "areachart",
+                    "name": "Earnings",
+                    "datasets": [
+                        {"label": c, "data": earnings[c].tolist()}
+                        for c in earnings.columns
+                    ],
+                    "labels": [d.strftime("%d %b %Y") for d in earnings.index],
                 }
             )
 

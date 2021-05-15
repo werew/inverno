@@ -161,6 +161,7 @@
                     <script>
                       piecharts = {}
                       areacharts = {}
+                      areacharts_stacked = {}
                     </script>
                     {% for attr, reports in attrs.items() %}
 
@@ -208,6 +209,14 @@
                                             <canvas id="{{chart_id}}"></canvas>
                                         </div>
                                         <script>areacharts[{{chart_id | tojson}}] = {{report | tojson}}</script>
+
+                                    {% elif report["type"] == "areachart_stacked" %}
+                                     
+                                        {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
+                                        <div class="chart-area pt-4" style="width: 100%; height: 90%">
+                                            <canvas id="{{chart_id}}"></canvas>
+                                        </div>
+                                        <script>areacharts_stacked[{{chart_id | tojson}}] = {{report | tojson}}</script>
 
                                     {% endif %}
                                     </div>
