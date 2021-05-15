@@ -53,6 +53,7 @@ class Transaction:
         self.amount = amount
 
         self._check_constraints()
+        self._infer_missing_fields()
 
     def get_holding_key(self):
         if (
@@ -73,6 +74,12 @@ class Transaction:
         elif self.name is not None:
             return self.name
         raise ValueError("Cannot construct holding name")
+
+    def _infer_missing_fields(self):
+        if self.amount is None and self.quantity is not None and self.price is not None:
+            self.amount = Price(
+                currency=self.price.currency, amount=self.quantity * self.price.amount
+            )
 
     def _check_constraints(self):
         if self.quantity is not None and self.quantity <= 0:

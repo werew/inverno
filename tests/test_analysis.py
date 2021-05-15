@@ -56,6 +56,26 @@ def _get_transactions(
         ),
     ]
 
+    trans["base_buy"] = trans["base"] + [
+        Transaction(
+            date=prices.index[1].date(),
+            action=TransactionAction.BUY,
+            ticker="FB",
+            quantity=1.0,
+            price=Price(currency=holding_currencies["FB"], amount=prices.iloc[1]["FB"]),
+        ),
+    ]
+
+    trans["base_sell"] = trans["base"] + [
+        Transaction(
+            date=prices.index[1].date(),
+            action=TransactionAction.SELL,
+            ticker="FB",
+            quantity=1.0,
+            price=Price(currency=holding_currencies["FB"], amount=prices.iloc[1]["FB"]),
+        ),
+    ]
+
     return trans
 
 
@@ -197,3 +217,57 @@ def test_attrs_allocations(analysis_data):
         data=[[4.0, 1.0, 1.0], [6.5, 0.5, 2.0]],
     )
     assert df.equals(attrs_alloc)
+
+
+def test_attrs_earnings(analysis_data):
+    data = analysis_data
+    analysis = Analysis(
+        prices=data["prices"],
+        conv_rates=data["conv_rates"],
+        holdings_currencies=data["holdings_currencies"],
+    )
+
+    def _get_attrs_earnings(transactions, attr_weights):
+        balances = Balance.get_balances(transactions=transactions)
+        allocations = analysis.get_allocations(balances=balances.values())
+        attrs_alloc = analysis.get_attr_allocations(
+            allocations=allocations, attr_weights=attr_weights
+        )
+        return analysis.get_attr_earnings(
+            attr_allocations=attrs_alloc,
+            transactions=transactions,
+            attr_weights=attr_weights,
+        )
+
+    attr_weights = {
+        "A": {"FB": 0.75, "TSM": 0.5},
+        "B": {"TSM": 0.5},
+    }
+    attrs_earnings = _get_attrs_earnings(
+        data["transactions"]["base"],
+        attr_weights,
+    )
+    df = pd.DataFrame(
+        columns=list(attr_weights.keys()) + ["unknown"],
+        index=data["prices"].index,
+        data=[[0.0, 0.0, 0.0], [2.5, -0.5, 1.0]],
+    )
+    assert df.equals(attrs_earnings)
+
+    attrs_earnings = _get_attrs_earnings(
+        data["transactions"]["base_buy"],
+        attr_weights,
+    )
+    assert df.equals(attrs_earnings)
+
+    attrs_earnings = _get_attrs_earnings(
+        data["transactions"]["base_sell"],
+        attr_weights,
+    )
+    assert df.equals(attrs_earnings)
+    
+    attrs_earnings = _get_attrs_earnings(
+        data["transactions"]["base_vest"],
+        attr_weights,
+    )
+    assert df.equals(attrs_earnings)
