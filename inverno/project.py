@@ -47,6 +47,12 @@ class Project:
             [h["holding"] for h in self._first_holdings.values()]
         )
 
+        # Adding dummy attribute holdings
+        self._meta["holdings"] = {
+            h["holding"].get_key(): {h["holding"].get_key(): 1.0}
+            for h in self._first_holdings.values()
+        }
+
     def _get_attrs_report_data(self, analysis: Analysis, allocations: pd.DataFrame):
         reports = {}
         for attr in self._meta:
@@ -99,7 +105,8 @@ class Project:
                 }
             )
 
-        return reports
+        # Place holdings first
+        return [("holdings", reports.pop("holdings"))] + list(reports.items())
 
     def _get_report_data(self):
         analysis = Analysis(
