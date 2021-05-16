@@ -10,7 +10,7 @@ import yfinance as yf
 from forex_python.converter import CurrencyRates
 from jinja2 import Environment, PackageLoader, select_autoescape
 from .balance import Balance
-from .price import Currency
+from .price import Currency, Price
 from .common import log_info, log_warning
 from .holding import Holding
 from .analysis import Analysis
@@ -123,7 +123,7 @@ class Project:
         }
 
         # Earning graph
-        earnings = analysis.get_earnings(
+        earnings_s = analysis.get_earnings(
             allocations=allocations,
             transactions=self.cfg.transactions,
             ndays=self.cfg.days,
@@ -132,10 +132,10 @@ class Project:
             "datasets": [
                 {
                     "label": "Earnings",
-                    "data": earnings.values.tolist(),
+                    "data": earnings_s.values.tolist(),
                 },
             ],
-            "labels": [d.strftime("%d %b %Y") for d in earnings.index],
+            "labels": [d.strftime("%d %b %Y") for d in earnings_s.index],
         }
 
         # Generate report data for all known attributes
@@ -143,7 +143,19 @@ class Project:
             analysis=analysis, allocations=allocations
         )
 
-        return {"balances": balances, "earnings": earnings, "attrs": attrs_report}
+        # Rate of return
+        ror = analysis.get_ror(allocations, earnings_s)
+
+        # Current number of holdings
+        nb_holdings = (allocations.iloc[-1] > 0).sum()
+
+        return {
+            "balances": balances,
+            "earnings": earnings,
+            "attrs": attrs_report,
+            "ror": ror,
+            "nb_holdings": nb_holdings,
+        }
 
     def gen_report(self, dst: str):
         """ Create an html report at the given destination """
@@ -159,13 +171,25 @@ class Project:
         # Generate report
         jinja_env = Environment(
             loader=PackageLoader("inverno", "html"),
-            autoescape=select_autoescape(["html", "xml"]),
+            # autoescape=select_autoescape(["html", "xml"]),
+            autoescape=True,
         )
 
         index_path = os.path.join(tmp_dst.name, "index.html")
         index_template = jinja_env.get_template(name="index.html")
         index_template.stream(
+            cfg=self.cfg,
             attrs=report_data["attrs"],
+            balance=Price(
+                currency=self.cfg.currency,
+                amount=report_data["balances"]["datasets"][0]["data"][-1],
+            ).to_string(),
+            earnings_amount=Price(
+                currency=self.cfg.currency,
+                amount=report_data["earnings"]["datasets"][0]["data"][-1],
+            ).to_string(),
+            ror=f"{report_data['ror']*100: .2f}",
+            nb_holdings=report_data["nb_holdings"],
             balances=report_data["balances"],
             earnings=report_data["earnings"],
         ).dump(index_path)

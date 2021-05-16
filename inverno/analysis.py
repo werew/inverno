@@ -138,6 +138,25 @@ class Analysis:
 
         return earnings
 
+    def get_ror(
+        self,
+        allocations: pd.DataFrame,
+        earnings: pd.Series,
+    ) -> float:
+        """
+        Calculates the rate of return on investment over the weighted
+        balance average.
+        """
+        balances = allocations.sum(axis=1)
+
+        weights_data = [None]*len(balances)
+        weights_data[0] = 1
+        weights_data[-1] = 0
+        weights = pd.Series(data=weights_data, index=balances.index).interpolate(method="linear")
+
+        w_avg = (weights*balances).sum() / weights.sum()
+        return earnings.values[-1] / w_avg
+
     def get_attr_allocations(
         self, allocations: pd.DataFrame, attr_weights: Dict[str, Dict[str, float]]
     ) -> pd.DataFrame:

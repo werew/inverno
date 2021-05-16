@@ -48,8 +48,11 @@ class Price:
             raise ValueError(f"Unsupported currency {self.currency.name}")
         return self.amount / rate
 
+    def to_string(self):
+        return f"{self.currency.value} {self.amount :,.2f}"
+
     def __repr__(self):
-        return f"{self.amount} {self.currency.name}"
+        return self.to_string()
 
     def __add__(self, other: Union["Price", float]):
         if isinstance(other, float):

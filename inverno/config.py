@@ -32,6 +32,11 @@ class Config:
         return opt.get(name)
 
     @property
+    def title(self) -> int:
+        """ Title of the project """
+        return self._get_opt("title") or "Unnamed Project"
+
+    @property
     def days(self) -> int:
         """ Number of days to analyse """
         return self._get_opt("days") or 90
@@ -170,7 +175,10 @@ class Config:
                 return price.currency
 
     def get_prices(
-        self, holding: Holding, start: datetime, end: Optional[datetime] = None,
+        self,
+        holding: Holding,
+        start: datetime,
+        end: Optional[datetime] = None,
     ) -> Optional[pd.DataFrame]:
         """ Prices history for the given holding (if provided) """
 
