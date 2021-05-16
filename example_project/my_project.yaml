@@ -1,22 +1,78 @@
-# My test project
+# Inverno example project
 
+
+# Options let you specify global settings for the project. 
+# This section is optinal. If omitted default values are used.
 options:
-  days: 90
-  end_date: 25/04/21
+  title: Example Project  # Name of the project
+  days: 90                # Show last N days
+  end_date: 25/04/21      # If specified, days are counted from this date
+  currency: USD           # Convert everything to this currency
+
+
+# At the very least you must provide a list of transactions.
+# This is used to determine balance and holdings through time.
+# You can provide multiple lists of transactions, they will
+# be merged and used together.
+#
+# Each transactions list you specify the format and the file 
+# containing the transactions
 transactions:
   - format: standard
     file: my_transactions.csv
-        #prices:
-        #  - match:
-        #      name: My Fund
-        #    file: my_found_prices.csv
+
+# Inverno uses several strategies to determine the prices of your 
+# holdings (e.g. try fetching them from Yahoo Finance or estimate them 
+# from transactions data).
+# Sometime (especially when prices are not available on Yahoo Finance) 
+# the strategy to estimate holding prices can lack of precision.
+# So you are given the possibility to provide your own price data which,
+# if present, is always preferred.
+#
+# Each entry must have a match section, matching the holding by name or
+# ticker, and a specify file where the price data is stored
+prices:
+    - match:
+        name: My Fund
+      file: my_fund_prices.csv
+
+# You can provide meta attributes for your holdings. For example,
+# you can specify the sector or industry of an holding or, basically
+# anything.
+#
+# Each meta entry must have a match section matching the holding
+# by name or ticker and an apply section used to specify 
+# the attributes for that holding.
+# Each attribute in the apply section can be specified in two ways.
+# As a single value:
+#
+#   <attribute>: <value>
+# 
+# As a combination of values:
+#
+#   <attribute>: 
+#       <value 1>: <percentage>
+#       <value 2>: <percentage>
+#       ...
+#
+# Specifing an attribute as a single value is equivalent to:
+#
+#   <attribute>: 
+#       <value>: 100%
+#
+# If percentages don't sum up to 100% the remaining portion of the
+# holding is considered "unknown" for that specific attribute.
+# Similarly, holding which do now specify an attribute are considered
+# "unknown" for that attribute.
+#
+# Attributes can be anything (i.e. you can put anything you want in
+# <attribute>).
 meta:
   - match:
       ticker: FB 
     apply:
       sector: Communication Services
       cap: large
-      type: equity
   - match:
       ticker: GOOGL
     apply:
@@ -40,7 +96,7 @@ meta:
       cap:
         small: 20%
         mid: 40%
-        big: 40%
+        large: 40%
       type:
         equity: 80%
         bonds: 20%
