@@ -168,6 +168,41 @@
 
 
 
+                    <!-- Transactions -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Transactions</h6>
+                        </div>
+                        <div class="card-body table-vscroll">
+                         <table class="table">
+  												<thead>
+  												  <tr>
+  												    <th scope="col">Date</th>
+  												    <th scope="col">Action</th>
+  												    <th scope="col">Holding</th>
+  												    <th scope="col">Quantity</th>
+  												    <th scope="col">Price</th>
+  												    <th scope="col">Amount</th>
+  												    <th scope="col">Fees</th>
+  												  </tr>
+  												</thead>
+  												<tbody>
+                        	{% for tr in transactions %}
+    												<tr>
+    												  <th scope="row">{{tr.date.strftime("%d %B %Y")}}</th>
+    												  <td>{{tr.action.name}}</td>
+    												  <td>{{tr.name or tr.ticker or tr.isin or "-"}}</td>
+    												  <td>{{tr.quantity or "-"}}</td>
+    												  <td>{{tr.price or "-"}}</td>
+    												  <td>{{tr.amount or "-"}}</td>
+    												  <td>{{tr.fees or "-"}}</td>
+    												</tr>
+                        	{% endfor %}
+													</tbody>
+												  </table> 
+                        </div>
+                    </div>
+                    <script>balances = {{balances | tojson}}</script>
 
                     <!-- Attributes -->
 

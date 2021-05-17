@@ -199,6 +199,9 @@ class Project:
             nb_holdings=report_data["nb_holdings"],
             balances=report_data["balances"],
             earnings=report_data["earnings"],
+            transactions=sorted(
+                self.cfg.transactions, key=lambda t: t.date, reverse=True
+            ),
         ).dump(index_path)
 
         # Move report to dst

@@ -10831,6 +10831,12 @@ a:focus {
 *}
 */
 
+.table-vscroll {
+  max-height: 300px;
+  overflow: auto;
+  display:inline-block;
+}
+
 .bg-login-image {
   background: url("https://source.unsplash.com/K4mSJ7kc0As/600x800");
   background-position: center;
