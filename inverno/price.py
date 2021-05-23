@@ -49,7 +49,7 @@ class Price:
         return self.amount / rate
 
     def to_string(self):
-        return f"{self.currency.value} {self.amount :,.2f}"
+        return f"{self.currency.value}{self.amount :,.2f}"
 
     def __repr__(self):
         return self.to_string()
