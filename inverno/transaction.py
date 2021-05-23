@@ -55,6 +55,9 @@ class Transaction:
         self._check_constraints()
         self._infer_missing_fields()
 
+    def __str__(self):
+        return f"Transaction: {self.date} {self.action.value} {self.name} {self.amount}"
+
     def get_holding_key(self):
         if (
             self.action != TransactionAction.BUY
