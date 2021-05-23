@@ -24,9 +24,13 @@ class TransactionAction(Enum):
             return TransactionAction.VEST
         elif action == "nra tax adj":
             return TransactionAction.TAX
+        elif action == "foreign tax paid":
+            return TransactionAction.TAX
         elif action == "qual div reinvest":
             return TransactionAction.DIV
-        raise ValueError(f"Cannot translate action {action}")
+        elif action == "qualified dividend":
+            return TransactionAction.DIV
+        raise ValueError(f'Cannot translate action "{action}"')
 
 
 class Transaction:
