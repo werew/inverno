@@ -144,18 +144,14 @@ class Analysis:
         earnings: pd.Series,
     ) -> float:
         """
-        Calculates the rate of return on investment over the weighted
-        balance average.
+        Calculates time weighted rate of return (TWROR)
+        https://www.ironsidegroup.com/2013/01/01/calculating-the-time-weighted-rate-of-return-in-a-cognos-report/
         """
+        deltas = earnings.shift(-1)-earnings
         balances = allocations.sum(axis=1)
-
-        weights_data = [None]*len(balances)
-        weights_data[0] = 1
-        weights_data[-1] = 0
-        weights = pd.Series(data=weights_data, index=balances.index).interpolate(method="linear")
-
-        w_avg = (weights*balances).sum() / weights.sum()
-        return earnings.values[-1] / w_avg
+        balances = (balances+deltas) / balances
+        ret = balances.prod()
+        return ret-1
 
     def get_attr_allocations(
         self, allocations: pd.DataFrame, attr_weights: Dict[str, Dict[str, float]]
