@@ -81,7 +81,7 @@ class Balance:
         cash = new_balance.get_cash_balance(transaction.price.currency)
         new_cash = cash + (transaction.price * transaction.quantity).amount
         if transaction.fees:
-            new_cash -= transaction.fees
+            new_cash -= transaction.fees.amount
         new_balance.cash[transaction.price.currency] = new_cash
 
     def _process_buy_transaction(
@@ -91,7 +91,7 @@ class Balance:
         cash = new_balance.get_cash_balance(transaction.price.currency)
         new_cash = cash - (transaction.price * transaction.quantity).amount
         if transaction.fees:
-            new_cash -= transaction.fees
+            new_cash -= transaction.fees.amount
         new_balance.cash[transaction.price.currency] = new_cash
 
         # Add holdings
@@ -108,7 +108,7 @@ class Balance:
         cash = new_balance.get_cash_balance(transaction.amount.currency)
         new_cash = cash + transaction.amount.amount
         if transaction.fees:
-            new_cash -= transaction.fees
+            new_cash -= transaction.fees.amount
         new_balance.cash[transaction.amount.currency] = new_cash
 
     def _process_div_transaction(
