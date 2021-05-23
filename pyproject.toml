@@ -11,8 +11,8 @@ click = "^7.1.2"
 yfinance = "^0.1.59"
 pandas = "^1.2.3"
 matplotlib = "^3.4.1"
-forex-python = "^1.5"
 Jinja2 = "^2.11.3"
+CurrencyConverter = "^0.16.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

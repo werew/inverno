@@ -1,3 +1,4 @@
+from typing import Dict
 from datetime import datetime
 import shutil
 import tempfile
@@ -7,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import yfinance as yf
-from forex_python.converter import CurrencyRates
+from currency_converter import CurrencyConverter
 from jinja2 import Environment, PackageLoader, select_autoescape
 from .balance import Balance
 from .price import Currency, Price
@@ -27,7 +28,7 @@ class Project:
         self.cfg = Config(path=config)
 
         # Conversion rates to the dest currency
-        self._dst_currency_rates = CurrencyRates().get_rates(self.cfg.currency.name)
+        self._dst_currency_rates = self._get_currency_rates(self.cfg.currency.name)
 
         # Balances after each transaction (max one balance per day)
         self.balances = Balance.get_balances(transactions=self.cfg.transactions)
@@ -52,6 +53,17 @@ class Project:
             h["holding"].get_key(): {h["holding"].get_key(): 1.0}
             for h in self._first_holdings.values()
         }
+
+    def _get_currency_rates(self, currency: str) -> Dict[str, float]:
+        cc = CurrencyConverter()
+        rates = {currency: 1.}
+        for cu in cc.currencies:
+            try:
+                rates[cu] = cc.convert(1, currency, cu)
+            except:
+                pass
+        return rates
+
 
     def _get_attrs_report_data(self, analysis: Analysis, allocations: pd.DataFrame):
         reports = {}
