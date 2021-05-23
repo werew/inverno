@@ -53,10 +53,20 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                              Balance ({{cfg.days}} days)
+                                          <div class="row">
+                                            <div class="col-auto" style="padding-right: 0">
+                                              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Balance
+                                              </div>
                                             </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{balance}}</div>
+                                            <div class="col-auto">
+                                              <i class="fas fa-info-circle text-gray-300" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="Current total worth of the portfolio, including cash and any type of asset."></i>
+                                            </div>
+                                          </div>
+                                          <div class="h5 mb-0 font-weight-bold text-gray-800">{{balance}}</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -72,9 +82,19 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                              Earnings ({{cfg.days}} days)
+                                          <div class="row">
+                                            <div class="col-auto" style="padding-right: 0">
+                                              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Earnings ({{cfg.days}} days)
+                                              </div>
                                             </div>
+                                            <div class="col-auto">
+                                              <i class="fas fa-info-circle text-gray-300" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="Total Return on Investment over a period of {{cfg.days}} days."></i>
+                                            </div>
+                                          </div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{earnings_amount}}</div>
                                         </div>
                                         <div class="col-auto">
@@ -91,9 +111,22 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                              Rate of return ({{cfg.days}} days)
+                                          <div class="row">
+                                            <div class="col-auto" style="padding-right: 0">
+                                              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Rate of return ({{cfg.days}} days)
+                                              </div>
                                             </div>
+                                            <div class="col-auto">
+                                              <i class="fas fa-info-circle text-gray-300" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="
+                                                Time-Weighted Rate of Return (TWROR or TWR), also called geometric mean return.
+                                                Calculated as a geometric mean of sub-periods of 1-day.
+                                                "></i>
+                                            </div>
+                                          </div>
                                             <div class="row no-gutters align-items-center">
                                                 <div class="col-auto">
                                                     <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
@@ -123,9 +156,21 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                              Number of holdings
+                                          <div class="row">
+                                            <div class="col-auto" style="padding-right: 0">
+                                              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Number of holdings
+                                              </div>
                                             </div>
+                                            <div class="col-auto">
+                                              <i class="fas fa-info-circle text-gray-300" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="
+                                                Number of holding currently held in this portfolio.
+                                                "></i>
+                                            </div>
+                                          </div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                               {{nb_holdings}}  
                                             </div>
@@ -143,7 +188,17 @@
                     <!-- Balance Chart -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Balance</h6>
+                            <div class="row">
+                              <div class="col-auto" style="padding-right: 0">
+                                <h6 class="m-0 font-weight-bold text-primary">Balance</h6>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-info-circle text-gray-300" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="Total worth history, including cash and any type on investment."></i>
+                              </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-area">
@@ -156,7 +211,23 @@
                     <!-- Earnings Chart -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Earnings</h6>
+                            <div class="row">
+                              <div class="col-auto" style="padding-right: 0">
+                                <h6 class="m-0 font-weight-bold text-primary">Earnings</h6>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-info-circle text-gray-300" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="
+                                  Earnings history. Shows changes in 
+                                  the value of the portfolio that are only caused by price fluctuations of the
+                                  holdings.
+                                  This is similar to a balance graph where cash-flow operations (e.g. 
+                                  cash deposits/withdrawals or vesting) have been hidden.
+                                  "></i>
+                              </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-area">
@@ -171,7 +242,19 @@
                     <!-- Transactions -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Transactions</h6>
+                            <div class="row">
+                              <div class="col-auto" style="padding-right: 0">
+                                <h6 class="m-0 font-weight-bold text-primary">Transactions</h6>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-info-circle text-gray-300" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="
+                                  List of all known transactions. 
+                                  "></i>
+                              </div>
+                            </div>
                         </div>
                         <div class="card-body table-vscroll">
                          <table class="table">
@@ -217,9 +300,22 @@
                         <div class="row">
                             <div class="col-lg-12 mt-4 mb-1">
                                 <div class="card bg-primary text-white shadow">
-                                    <div class="card-body">
-                                        <h4>{{attr.capitalize()}}</h4>
+                                  <div class="card-body">
+                                    <div class="row">
+                                      <div class="col-auto" style="padding-right: 0">
+                                          <h4>{{attr.capitalize()}}</h4>
+                                      </div>
+                                      <div class="col-auto">
+                                        <i class="fas fa-info-circle text-gray-300"
+                                          data-bs-toggle="tooltip"
+                                          data-bs-placement="top"
+                                          style="vertical-align: bottom"
+                                          title="
+                                          Reports for attribute {{attr}}.
+                                          "></i>
+                                      </div>
                                     </div>
+                                  </div>
                                 </div>
                             </div>
                         </div>
@@ -231,7 +327,18 @@
                                     <!-- Card Header - Dropdown -->
                                     <div
                                         class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                        <h6 class="m-0 font-weight-bold text-primary">{{report["name"]}}</h6>
+                                      <div class="row">
+                                          <div class="col-auto" style="padding-right: 0">
+                                              <h6 class="m-0 font-weight-bold text-primary">{{report["name"]}}</h6>
+                                          </div>
+                                          <div class="col-auto">
+                                            <i class="fas fa-info-circle text-gray-300"
+                                              data-bs-toggle="tooltip"
+                                              data-bs-placement="top"
+                                              title="{{report['help']}}"
+                                              ></i>
+                                          </div>
+                                      </div>
                                     </div>
                                     
                                     <!-- Card Body -->

@@ -83,6 +83,7 @@ class Project:
                     "name": "Allocation",
                     "data": last_alloc,
                     "labels": list(attr_alloc.columns),
+                    "help": "Shows how much is allocated for each type in the portfolio.",
                 }
             )
 
@@ -96,6 +97,7 @@ class Project:
                         for c in attr_alloc.columns
                     ],
                     "labels": [d.strftime("%d %b %Y") for d in attr_alloc.index],
+                    "help": "Full history of allocations.",
                 }
             )
 
@@ -114,6 +116,7 @@ class Project:
                         for c in earnings.columns
                     ],
                     "labels": [d.strftime("%d %b %Y") for d in earnings.index],
+                    "help": "Shows value growth for each type independently.",
                 }
             )
 
