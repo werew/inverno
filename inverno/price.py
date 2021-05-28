@@ -22,7 +22,7 @@ class Price:
         self.currency = currency
         self.amount = amount
 
-    @property()
+    @property
     def amount(self) -> float:
         return self._amount
 
