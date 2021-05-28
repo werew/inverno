@@ -88,7 +88,7 @@ for (const [key, value] of Object.entries(piecharts)) {
 
 
 // Area chart
-function makeAreaChart(element_id, datasets, labels, is_small, is_stacked){
+function makeAreaChart(element_id, datasets, labels, show_legend, is_small, is_stacked){
   var ctx = document.getElementById(element_id);
 
   let colors = pick_colors(datasets.length);
@@ -113,7 +113,6 @@ function makeAreaChart(element_id, datasets, labels, is_small, is_stacked){
         }
       );
   }
-  console.log(_datasets)
   new Chart(ctx, {
     type: 'line',
     data: {
@@ -163,7 +162,7 @@ function makeAreaChart(element_id, datasets, labels, is_small, is_stacked){
         }],
       },
       legend: {
-        display: false
+        display: show_legend, 
       },
       tooltips: {
         backgroundColor: "rgb(255,255,255)",
@@ -191,12 +190,12 @@ function makeAreaChart(element_id, datasets, labels, is_small, is_stacked){
 }
 
 for (const [key, value] of Object.entries(areacharts)) {
-    makeAreaChart(key, value['datasets'], value['labels'], true, false);
+    makeAreaChart(key, value['datasets'], value['labels'], value['show_legend'], true, false);
 }
 
 for (const [key, value] of Object.entries(areacharts_stacked)) {
-    makeAreaChart(key, value['datasets'], value['labels'], true, true);
+    makeAreaChart(key, value['datasets'], value['labels'], value['show_legend'], true, true);
 }
 
-makeAreaChart("balance_chart", balances["datasets"], balances["labels"], false, true)
-makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], false, true)
+makeAreaChart("balance_chart", balances["datasets"], balances["labels"], false, false, true)
+makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], false, false, true)

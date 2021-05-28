@@ -97,6 +97,7 @@ class Project:
                         for c in attr_alloc.columns
                     ],
                     "labels": [d.strftime("%d %b %Y") for d in attr_alloc.index],
+                    "show_legend": True,
                     "help": "Full history of allocations.",
                 }
             )
@@ -116,6 +117,7 @@ class Project:
                         for c in earnings.columns
                     ],
                     "labels": [d.strftime("%d %b %Y") for d in earnings.index],
+                    "show_legend": True,
                     "help": "Shows value growth for each type independently.",
                 }
             )
