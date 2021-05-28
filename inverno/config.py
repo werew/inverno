@@ -151,7 +151,7 @@ class Config:
 
             holding = self._find_matching_holding(entry["match"], holdings=holdings)
             if holding is None:
-                raise ValueError(f"Couldn't find holding {entry['match']}")
+                continue
 
             for attr, val in entry["apply"].items():
                 if isinstance(val, str):
