@@ -147,11 +147,11 @@ class Analysis:
         Calculates time weighted rate of return (TWROR)
         https://www.ironsidegroup.com/2013/01/01/calculating-the-time-weighted-rate-of-return-in-a-cognos-report/
         """
-        deltas = earnings.shift(-1)-earnings
+        deltas = earnings.shift(-1) - earnings
         balances = allocations.sum(axis=1)
-        balances = (balances+deltas) / balances
+        balances = (balances + deltas) / balances
         ret = balances.prod()
-        return ret-1
+        return ret - 1
 
     def get_attr_allocations(
         self, allocations: pd.DataFrame, attr_weights: Dict[str, Dict[str, float]]
@@ -215,10 +215,10 @@ class Analysis:
     ) -> pd.DataFrame:
         """
         Compute earnings by attribute allocations. Earnings are computed by
-        calculating and ditributing the earnings for each holding to its 
-        attribute allocation. For example, if holding X has earned $100 and its sector 
+        calculating and ditributing the earnings for each holding to its
+        attribute allocation. For example, if holding X has earned $100 and its sector
         allocation is 50% healthcare and 50% tech, then healthcare and tech sector
-        have both produced $50 of earnings. 
+        have both produced $50 of earnings.
         Buy, sell and vest transaction are discounted from the earnings.
         """
         # Map holdings to their weights with respect of attributes
@@ -242,24 +242,20 @@ class Analysis:
         for trs in transactions:
             # Discount allocation increases after BUY
             if trs.action == TransactionAction.BUY:
-                delta = - trs.amount.normalize_currency(self.conv_rates)
-                earnings = _apply_deltas(
-                    trs.date, delta, trs.get_holding_key()
-                )
+                delta = -trs.amount.normalize_currency(self.conv_rates)
+                earnings = _apply_deltas(trs.date, delta, trs.get_holding_key())
 
             # Discount allocation decreases after SELL
             elif trs.action == TransactionAction.SELL:
                 delta = trs.amount.normalize_currency(self.conv_rates)
-                earnings = _apply_deltas(
-                    trs.date, delta, trs.get_holding_key()
-                )
+                earnings = _apply_deltas(trs.date, delta, trs.get_holding_key())
 
             # Discount vested stock (as it is not earning from investiment)
             elif trs.action == TransactionAction.VEST:
                 holding = trs.get_holding_key()
                 price = self.prices.loc[trs.date :][holding].iloc[0]
                 holding_cur = self.holdings_currencies[holding]
-                delta = - Price(
+                delta = -Price(
                     currency=holding_cur, amount=trs.quantity * price
                 ).normalize_currency(self.conv_rates)
                 earnings = _apply_deltas(trs.date, delta, holding)
