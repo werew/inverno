@@ -147,6 +147,12 @@ class Transaction:
                 amount=abs(self.amount.amount / self.quantity),
             )
 
+        # Currency must be consistent
+        if self.amount is not None and self.price is not None:
+            if self.amount.currency != self.price.currency:
+                raise ValueError("Price and amount must use the same currency")
+
+
     def _check_constraints_sell(self):
         # Same constrains as buy transactions
         self._check_constraints_buy()
