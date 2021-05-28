@@ -10,7 +10,8 @@ class TransactionAction(Enum):
     VEST = "vest"
     TAX = "tax"
     DIV = "dividends"
-    CASH = "cash"
+    CASH_IN = "cash_in"
+    CASH_OUT = "cash_out"
     SPLIT = "split"
 
     @staticmethod
@@ -116,7 +117,9 @@ class Transaction:
             self._check_constraints_vest()
         elif self.action == TransactionAction.TAX:
             self._check_constraints_tax()
-        elif self.action == TransactionAction.CASH:
+        elif self.action == TransactionAction.CASH_IN:
+            self._check_constraints_cash()
+        elif self.action == TransactionAction.CASH_OUT:
             self._check_constraints_cash()
         elif self.action == TransactionAction.DIV:
             self._check_constraints_div()

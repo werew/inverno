@@ -29,9 +29,13 @@ class Balance:
             self._process_sell_transaction(
                 new_balance=new_balance, transaction=transaction
             )
-        elif transaction.action == TransactionAction.CASH:
+        elif transaction.action == TransactionAction.CASH_IN:
             self._process_cash_transaction(
-                new_balance=new_balance, transaction=transaction
+                new_balance=new_balance, transaction=transaction, out=False,
+            )
+        elif transaction.action == TransactionAction.CASH_OUT:
+            self._process_cash_transaction(
+                new_balance=new_balance, transaction=transaction, out=True,
             )
         elif transaction.action == TransactionAction.DIV:
             self._process_div_transaction(
@@ -102,11 +106,16 @@ class Balance:
             new_balance.holdings[new_holding.get_key()] = new_holding
 
     def _process_cash_transaction(
-        self, new_balance: "Balance", transaction: Transaction
+        self, new_balance: "Balance", transaction: Transaction, out: bool,
     ):
         # Reduce cash for the given currency
         cash = new_balance.get_cash_balance(transaction.amount.currency)
-        new_cash = cash + transaction.amount.amount
+
+        if out:
+            new_cash = cash - transaction.amount.amount
+        else:
+            new_cash = cash + transaction.amount.amount
+
         if transaction.fees:
             new_cash -= transaction.fees.amount
         new_balance.cash[transaction.amount.currency] = new_cash
@@ -114,12 +123,12 @@ class Balance:
     def _process_div_transaction(
         self, new_balance: "Balance", transaction: Transaction
     ):
-        self._process_cash_transaction(new_balance=new_balance, transaction=transaction)
+        self._process_cash_transaction(new_balance=new_balance, transaction=transaction, out=False)
 
     def _process_tax_transaction(
         self, new_balance: "Balance", transaction: Transaction
     ):
-        self._process_cash_transaction(new_balance=new_balance, transaction=transaction)
+        self._process_cash_transaction(new_balance=new_balance, transaction=transaction, out=True)
 
     def _process_vest_transaction(
         self, new_balance: "Balance", transaction: Transaction

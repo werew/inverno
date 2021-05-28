@@ -113,10 +113,15 @@ class Analysis:
 
         for trs in transactions:
             # Discount cash put into the account
-            if trs.action == TransactionAction.CASH:
+            if (
+                trs.action == TransactionAction.CASH_IN
+                or trs.action == TransactionAction.CASH_OUT
+            ):
                 rows = earnings.loc[trs.date :]
                 delta = trs.amount.normalize_currency(self.conv_rates)
-                earnings.loc[trs.date :] = rows.add(-delta)
+                earnings.loc[trs.date :] = rows.add(
+                    -delta if trs.action == TransactionAction.CASH_IN else delta
+                )
 
             # Discount vested stock (as it is not earning from investiment)
             elif trs.action == TransactionAction.VEST:

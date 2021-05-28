@@ -18,7 +18,7 @@ def _get_transactions(
     trans["base"] = [
         Transaction(
             date=prices.index[0].date(),
-            action=TransactionAction.CASH,
+            action=TransactionAction.CASH_IN,
             amount=Price(currency=Currency.USD, amount=10.0),
         ),
         Transaction(
@@ -42,7 +42,7 @@ def _get_transactions(
     trans["base_add_cash"] = trans["base"] + [
         Transaction(
             date=prices.index[1].date(),
-            action=TransactionAction.CASH,
+            action=TransactionAction.CASH_IN,
             amount=Price(currency=Currency.USD, amount=10.0),
         ),
     ]
