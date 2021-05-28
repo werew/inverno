@@ -15,8 +15,10 @@ class Currency(Enum):
 class Price:
     """
     A monetary price, including a currency and a positive amount.
-    Note that the amount is always positive even providing a negative 
-    amount value
+    Providing a negative amount will result in an error (note that we only allow
+    positive amounts for safety reasons, if you are really in need of representing
+    negative amounts depending on your use case you should associate some meta info to
+    the price, for example for cash transactions this is done with CASH_OUT vs CASH_IN)
     """
     def __init__(self, currency: Currency, amount: float):
         self.currency = currency
@@ -28,10 +30,12 @@ class Price:
 
     @amount.setter
     def amount(self, amount: float):
+        if amount < 0:
+            raise ValueError(("Price can only be positive"))
         self._amount = abs(amount)
     
     @staticmethod
-    def from_str(price: str, currency: Optional[Currency] = None) -> "Price":
+    def from_str(price: str, currency: Optional[Currency] = None, expect_negative=False) -> "Price":
         match = re.search(r"[\d\.,]+", price)
         if match is None:
             raise ValueError(f'Cannot find valid price in string "{price}"')
@@ -52,6 +56,10 @@ class Price:
             if currency is None:
                 raise ValueError(f"Couldn't get currency for price {str}")
 
+        if expect_negative:
+            if amount > 0:
+                raise ValueError(f"Expected a negative value")
+            amount = - amount
         return Price(currency=currency, amount=amount)
 
     def normalize_currency(self, conversion_rates: Dict[str,float]) -> float:

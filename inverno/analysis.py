@@ -65,7 +65,7 @@ class Analysis:
             # Populate cash dataframe
             total_cash = 0.0
             for curr, amount in balance.cash.items():
-                cash_to_add = Price(currency=curr, amount=amount).normalize_currency(
+                cash_to_add = Price(currency=curr, amount=abs(amount)).normalize_currency(
                     self.conv_rates
                 )
                 # Prices are always positive, so must compensate for that

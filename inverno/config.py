@@ -228,7 +228,14 @@ class Config:
                 quantity = float(quantity_str) if quantity_str else None
 
                 amount_str = row["Amount"]
-                amount = Price.from_str(amount_str) if amount_str else None
+                if amount_str:
+                    if action == TransactionAction.TAX or action == TransactionAction.BUY:
+                        amount = Price.from_str(amount_str, expect_negative=True)
+                    else:
+                        amount = Price.from_str(amount_str)
+                else:
+                    amount = None
+
 
                 trs.append(
                     Transaction(
