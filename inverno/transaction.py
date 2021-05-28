@@ -49,7 +49,7 @@ class Transaction:
     ):
         self.action = action
         self.date = date
-        self.quantity = quantity
+        self.quantity = None if quantity is None else abs(quantity)
         self.price = price
         self.fees = fees
         self.name = name
