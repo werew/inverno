@@ -129,6 +129,18 @@ class Config:
             if self._match_holding(match_section=match_section, holding=holding):
                 return holding
 
+    def _get_meta_attributes_apply(
+        self, attrs: Dict, holding: Holding, apply: Dict
+    ) -> defaultdict:
+        for attr, val in apply.items():
+            if isinstance(val, str):
+                attrs[attr][val][holding.get_key()] = 1
+
+            elif isinstance(val, dict):
+                for k, v in val.items():
+                    v = float(v.strip("%")) / 100.0
+                    attrs[attr][k][holding.get_key()] = v
+
     def get_meta_attributes(self, holdings: List[Holding]) -> defaultdict:
         """
         Gets all meta attributes for the given list of holdings
@@ -153,14 +165,11 @@ class Config:
             if holding is None:
                 continue
 
-            for attr, val in entry["apply"].items():
-                if isinstance(val, str):
-                    attrs[attr][val][holding.get_key()] = 1
+            if "apply" in entry:
+                self._get_meta_attributes_apply(
+                    attrs=attrs, holding=holding, apply=entry["apply"]
+                )
 
-                elif isinstance(val, dict):
-                    for k, v in val.items():
-                        v = float(v.strip("%")) / 100.0
-                        attrs[attr][k][holding.get_key()] = v
         return attrs
 
     def get_currency(self, holding: Holding) -> Optional[Currency]:
@@ -229,13 +238,15 @@ class Config:
 
                 amount_str = row["Amount"]
                 if amount_str:
-                    if action == TransactionAction.TAX or action == TransactionAction.BUY:
+                    if (
+                        action == TransactionAction.TAX
+                        or action == TransactionAction.BUY
+                    ):
                         amount = Price.from_str(amount_str, expect_negative=True)
                     else:
                         amount = Price.from_str(amount_str)
                 else:
                     amount = None
-
 
                 trs.append(
                     Transaction(
