@@ -166,9 +166,6 @@ class Transaction:
         if self.amount is None:
             raise ValueError("Amount must be set for tax transactions")
 
-        if self.amount >= 0.0:
-            raise ValueError("Amount must be < 0 for tax transactions")
-
     def _check_constraints_cash(self):
         if self.amount is None:
             raise ValueError("Amount must be set for cash transactions")
@@ -176,6 +173,3 @@ class Transaction:
     def _check_constraints_div(self):
         if self.amount is None:
             raise ValueError("Amount must be set for dividends transactions")
-
-        if self.amount <= 0.0:
-            raise ValueError("Amount must be > 0 for tax transactions")
