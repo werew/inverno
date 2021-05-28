@@ -13,10 +13,23 @@ class Currency(Enum):
 
 @total_ordering
 class Price:
+    """
+    A monetary price, including a currency and a positive amount.
+    Note that the amount is always positive even providing a negative 
+    amount value
+    """
     def __init__(self, currency: Currency, amount: float):
         self.currency = currency
         self.amount = amount
 
+    @property()
+    def amount(self) -> float:
+        return self._amount
+
+    @amount.setter
+    def amount(self, amount: float):
+        self._amount = abs(amount)
+    
     @staticmethod
     def from_str(price: str, currency: Optional[Currency] = None) -> "Price":
         match = re.search(r"[\d\.,]+", price)
