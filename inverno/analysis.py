@@ -195,12 +195,16 @@ class Analysis:
         for holding_key in self.holdings_keys:
             allocation = tot_holdings[holding_key]
 
-            if allocation > 1:
+            # Floating point operations can lack of precision
+            # so we should be slightly tollerant
+            eps = 0.00001
+
+            if allocation > 1 + eps:
                 raise ValueError(
-                    f"Holding {holding_key} cannot have more than 100% allocation"
+                    f"Found an attribute with more than 100% allocation for {holding_key}"
                 )
 
-            elif allocation == 1:
+            elif allocation > 1 - eps:
                 continue
 
             df["unknown"] += allocations[holding_key] * (1 - allocation)
