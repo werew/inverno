@@ -65,9 +65,11 @@ class Analysis:
             # Populate cash dataframe
             total_cash = 0.0
             for curr, amount in balance.cash.items():
-                total_cash += Price(currency=curr, amount=amount).normalize_currency(
+                cash_to_add = Price(currency=curr, amount=amount).normalize_currency(
                     self.conv_rates
                 )
+                # Prices are always positive, so must compensate for that
+                total_cash += cash_to_add if amount > 0 else - cash_to_add
             cash.loc[pd.Timestamp(balance.date), "cash"] = total_cash
 
         # Fill empty slot using previous known values
