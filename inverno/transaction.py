@@ -85,8 +85,9 @@ class Transaction:
 
     def _infer_missing_fields(self):
         if self.amount is None and self.quantity is not None and self.price is not None:
+            fees = 0. if self.fees is None else self.fees
             self.amount = Price(
-                currency=self.price.currency, amount=self.quantity * self.price.amount
+                currency=self.price.currency, amount=(self.quantity * self.price.amount) - fees
             )
 
     def _check_constraints(self):
