@@ -26,7 +26,7 @@ class Holding:
         raise ValueError("Cannot construct holding name")
 
     def __hash__(self):
-        return self.get_key()
+        return hash(self.get_key())
 
     def match_transaction(self, transaction: Transaction) -> bool:
         if self.ticker is not None and self.ticker != transaction.ticker:
