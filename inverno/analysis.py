@@ -65,11 +65,11 @@ class Analysis:
             # Populate cash dataframe
             total_cash = 0.0
             for curr, amount in balance.cash.items():
-                cash_to_add = Price(currency=curr, amount=abs(amount)).normalize_currency(
-                    self.conv_rates
-                )
+                cash_to_add = Price(
+                    currency=curr, amount=abs(amount)
+                ).normalize_currency(self.conv_rates)
                 # Prices are always positive, so must compensate for that
-                total_cash += cash_to_add if amount > 0 else - cash_to_add
+                total_cash += cash_to_add if amount > 0 else -cash_to_add
             cash.loc[pd.Timestamp(balance.date), "cash"] = total_cash
 
         # Fill empty slot using previous known values
@@ -208,7 +208,8 @@ class Analysis:
 
             if allocation > 1 + eps:
                 raise ValueError(
-                    f"Found an attribute with more than 100% allocation for {holding_key}"
+                    f"Found an attribute with more than 100% "
+                    f"allocation for {holding_key}"
                 )
 
             elif allocation > 1 - eps:
