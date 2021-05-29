@@ -18,12 +18,33 @@ from .holding import Holding
 class Config:
     """ Utility class representing a yaml project config """
 
-    def __init__(self, path: str):
-        with open(path) as fd:
-            self._cfg = yaml.load(fd, Loader=yaml.SafeLoader)
+    def __init__(self, cfg: str):
+        self._cfg = yaml.load(cfg, Loader=yaml.SafeLoader)
         self._transactions = None
         self._prices = None
         self._holding_to_currency = {}
+        self._files_provided = {}
+
+    @staticmethod
+    def from_file(path: str):
+        """ Create Config object from file """
+        with open(path) as fd:
+            return Config(cfg=fd.read())
+
+    def provide_file(self, path: str, content: str):
+        """
+        Use this method if instead of reading from a path
+        contained in the config you would like to provide
+        directly the content of the file.
+        This is similar to mocking.
+        """
+        self._files_provided[path] = content
+
+    def _read_file(self, path: str) -> str:
+        if path in self._files_provided:
+            return self._files_provided[path]
+        with open(path) as fd:
+            return fd.read()
 
     def _get_opt(self, name: str) -> Any:
         opt = {}
@@ -42,7 +63,7 @@ class Config:
         return self._get_opt("days") or 90
 
     @property
-    def end_date(self) -> int:
+    def end_date(self) -> datetime:
         """ Number of days to analyse """
         date_opt = self._get_opt("end_date")
         if date_opt is None:
@@ -84,9 +105,9 @@ class Config:
         n = "name"
 
         return (
-            (m.get(t) is not None and m[t].strip() == getattr(h, t))
-            or (m.get(i) is not None and m[i].strip() == getattr(h, i))
-            or (m.get(n) is not None and m[n].strip() == getattr(h, n))
+            (m.get(t) is None or m[t].strip() == getattr(h, t))
+            and (m.get(i) is None or m[i].strip() == getattr(h, i))
+            and (m.get(n) is None or m[n].strip() == getattr(h, n))
         )
 
     def _find_matching_entry(self, config_section: List[Dict], holding: Holding):
@@ -132,14 +153,93 @@ class Config:
     def _get_meta_attributes_apply(
         self, attrs: Dict, holding: Holding, apply: Dict
     ) -> defaultdict:
+        holding_key = holding.get_key()
+
         for attr, val in apply.items():
+
+            # Apply has the precendence over everything else.
+            # If this attribute was already set, remove it.
+            for holdings_alloc in attrs[attr].values():
+                if holding_key in holdings_alloc:
+                    del holdings_alloc[holding_key]
+
             if isinstance(val, str):
-                attrs[attr][val][holding.get_key()] = 1
+                attrs[attr][val][holding_key] = 1
 
             elif isinstance(val, dict):
                 for k, v in val.items():
                     v = float(v.strip("%")) / 100.0
-                    attrs[attr][k][holding.get_key()] = v
+                    attrs[attr][k][holding_key] = v
+
+    def _get_meta_attributes_composition(
+        self, attrs: Dict, holding: Holding, holdings: List[Holding], composition: Dict
+    ) -> defaultdict:
+        # Collect all sub holdings
+        sub_holdings = {}
+
+        def _collect_by(field: str):
+            if field not in composition:
+                return
+
+            if not isinstance(composition[field], dict):
+                raise ValueError("Components must be key value pairs")
+
+            for val, percentage in composition[field].items():
+
+                # Try to find holding among known holdings
+                sub_holding = self._find_matching_holding(
+                    {field: val},
+                    holdings,
+                )
+
+                if sub_holding is None:
+                    sub_holding = self._find_matching_holding(
+                        {field: val},
+                        self._collect_holdings_from_meta(),
+                    )
+
+                if sub_holding is None:
+                    continue
+
+                sub_holdings[sub_holding.get_key()] = {
+                    "holding": sub_holding,
+                    "percentage": float(percentage.strip("%")) / 100.0,
+                }
+
+        _collect_by("name")
+        _collect_by("ticker")
+        _collect_by("isin")
+
+        sub_holding_attrs = self.get_meta_attributes(
+            [s["holding"] for s in sub_holdings.values()]
+        )
+        for attr, entries in sub_holding_attrs.items():
+            for entry, holdings_alloc in entries.items():
+                for holding_key, sub_alloc_percentage in holdings_alloc.items():
+                    old_val = attrs[attr][entry].get(holding.get_key()) or 0.0
+                    attrs[attr][entry][holding.get_key()] = old_val + (
+                        sub_holdings[holding_key]["percentage"] * sub_alloc_percentage
+                    )
+
+    def _collect_holdings_from_meta(self) -> List[Holding]:
+        holdings = []
+        meta = self._cfg.get("meta") or []
+
+        for entry in meta:
+            m = entry["match"]
+            name, ticker, isin = None, None, None
+
+            if "name" in m:
+                name = m["name"]
+
+            if "ticker" in m:
+                ticker = m["ticker"]
+
+            if "isin" in m:
+                isin = m["isin"]
+
+            holdings.append(Holding(name=name, ticker=ticker, isin=isin))
+        return holdings
 
     def get_meta_attributes(self, holdings: List[Holding]) -> defaultdict:
         """
@@ -165,6 +265,14 @@ class Config:
             if holding is None:
                 continue
 
+            if "composition" in entry:
+                self._get_meta_attributes_composition(
+                    attrs=attrs,
+                    holding=holding,
+                    holdings=holdings,
+                    composition=entry["composition"],
+                )
+
             if "apply" in entry:
                 self._get_meta_attributes_apply(
                     attrs=attrs, holding=holding, apply=entry["apply"]
@@ -178,10 +286,9 @@ class Config:
         if path is None:
             return
 
-        with open(path) as csvfile:
-            for row in csv.DictReader(csvfile):
-                price = Price.from_str(price=row["price"])
-                return price.currency
+        for row in csv.DictReader(self._read_file(path)):
+            price = Price.from_str(price=row["price"])
+            return price.currency
 
     def get_prices(
         self,
@@ -196,102 +303,99 @@ class Config:
             return
 
         if end is None:
-            end = datetime.now()
+            end = self.end_date
 
         index = pd.date_range(start=start, end=end, freq="D")
         prices = pd.Series(index=index, dtype=np.float64)
         prices.name = holding.get_key()
 
-        with open(path) as csvfile:
-            for row in csv.DictReader(csvfile):
-                date = dateutil.parser.parse(row["date"], dayfirst=True)
-                price = Price.from_str(price=row["price"])
+        for row in csv.DictReader(self._read_file(path).split("\n")):
+            date = dateutil.parser.parse(row["date"], dayfirst=True)
+            price = Price.from_str(price=row["price"])
 
-                if date >= start and date <= end:
-                    prices[date] = price.amount
+            if date >= start and date <= end:
+                prices[date] = price.amount
 
         return prices
 
     def _load_transactions_schwab(self, filename: str) -> List[Transaction]:
         trs = []
-        with open(filename) as csvfile:
-            # skip first line, which contains the document title
-            next(csvfile, None)
 
-            # skip last line, which contains the total
-            for row in list(csv.DictReader(csvfile))[:-1]:
-                # dates are sometime expressed as "mm/dd/yyyy as of mm/dd/yyy"
-                # in which case we pick the first date
-                date_str = row["Date"].split(" ")[0]
-                date = datetime.strptime(date_str, "%m/%d/%Y")
+        csvfile = self._read_file(filename).split("\n")
 
-                action = TransactionAction.from_schwab_action(row["Action"])
+        # skip first line, which contains the document title
+        csvfile = csvfile[1:]
 
-                price_str = row["Price"]
-                price = Price.from_str(price_str) if price_str else None
+        # skip last line, which contains the total
+        for row in list(csv.DictReader(csvfile))[:-1]:
+            # dates are sometime expressed as "mm/dd/yyyy as of mm/dd/yyy"
+            # in which case we pick the first date
+            date_str = row["Date"].split(" ")[0]
+            date = datetime.strptime(date_str, "%m/%d/%Y")
 
-                fees_str = row["Fees & Comm"]
-                fees = Price.from_str(fees_str) if fees_str else None
+            action = TransactionAction.from_schwab_action(row["Action"])
 
-                quantity_str = row["Quantity"]
-                quantity = float(quantity_str) if quantity_str else None
+            price_str = row["Price"]
+            price = Price.from_str(price_str) if price_str else None
 
-                amount_str = row["Amount"]
-                if amount_str:
-                    if (
-                        action == TransactionAction.TAX
-                        or action == TransactionAction.BUY
-                    ):
-                        amount = Price.from_str(amount_str, expect_negative=True)
-                    else:
-                        amount = Price.from_str(amount_str)
+            fees_str = row["Fees & Comm"]
+            fees = Price.from_str(fees_str) if fees_str else None
+
+            quantity_str = row["Quantity"]
+            quantity = float(quantity_str) if quantity_str else None
+
+            amount_str = row["Amount"]
+            if amount_str:
+                if action == TransactionAction.TAX or action == TransactionAction.BUY:
+                    amount = Price.from_str(amount_str, expect_negative=True)
                 else:
-                    amount = None
+                    amount = Price.from_str(amount_str)
+            else:
+                amount = None
 
-                trs.append(
-                    Transaction(
-                        action=action,
-                        date=date,
-                        ticker=row["Symbol"] or None,
-                        name=row["Description"],
-                        price=price,
-                        quantity=quantity,
-                        fees=fees,
-                        amount=amount,
-                    )
+            trs.append(
+                Transaction(
+                    action=action,
+                    date=date,
+                    ticker=row["Symbol"] or None,
+                    name=row["Description"] or None,
+                    price=price,
+                    quantity=quantity,
+                    fees=fees,
+                    amount=amount,
                 )
+            )
         return trs
 
     def _load_transactions_standard(self, filename: str) -> List[Transaction]:
         trs = []
-        with open(filename) as csvfile:
-            for row in list(csv.DictReader(csvfile)):
-                date = dateutil.parser.parse(row["date"], dayfirst=True)
-                action = TransactionAction(row["action"])
-                price_str = row["price"]
-                price = Price.from_str(price_str) if price_str else None
+        for row in list(csv.DictReader(self._read_file(filename).split("\n"))):
+            date = dateutil.parser.parse(row["date"], dayfirst=True)
+            action = TransactionAction(row["action"])
+            price_str = row["price"]
+            price = Price.from_str(price_str) if price_str else None
 
-                fees_str = row["fees"]
-                fees = Price.from_str(fees_str) if fees_str else None
+            fees_str = row["fees"]
+            fees = Price.from_str(fees_str) if fees_str else None
 
-                quantity_str = row["quantity"]
-                quantity = float(quantity_str) if quantity_str else None
+            quantity_str = row["quantity"]
+            quantity = float(quantity_str) if quantity_str else None
 
-                amount_str = row["amount"]
-                amount = Price.from_str(amount_str) if amount_str else None
+            amount_str = row["amount"]
+            amount = Price.from_str(amount_str) if amount_str else None
 
-                trs.append(
-                    Transaction(
-                        action=action,
-                        date=date,
-                        ticker=row["ticker"] or None,
-                        name=row["name"],
-                        price=price,
-                        quantity=quantity,
-                        fees=fees,
-                        amount=amount,
-                    )
+            trs.append(
+                Transaction(
+                    action=action,
+                    date=date,
+                    ticker=row["ticker"] or None,
+                    name=row["name"] or None,
+                    price=price,
+                    quantity=quantity,
+                    fees=fees,
+                    amount=amount,
                 )
+            )
         return trs
 
     def _load_transactions(self) -> List[Transaction]:

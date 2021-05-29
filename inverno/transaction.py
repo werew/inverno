@@ -173,3 +173,16 @@ class Transaction:
     def _check_constraints_div(self):
         if self.amount is None:
             raise ValueError("Amount must be set for dividends transactions")
+
+    def __eq__(self, o):
+        return (
+            self.action == o.action and
+            self.date == o.date and
+            self.ticker == o.ticker and
+            self.isin == o.isin and
+            self.name == o.name and
+            self.fees == o.fees and
+            self.price == o.price and
+            self.quantity == o.quantity and
+            self.amount == o.amount
+        )

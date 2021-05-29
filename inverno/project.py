@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import yfinance as yf
 from currency_converter import CurrencyConverter
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader
 from .balance import Balance
 from .price import Currency, Price
 from .common import log_info, log_warning
@@ -25,7 +25,7 @@ class Project:
 
     def __init__(self, config: str):
 
-        self.cfg = Config(path=config)
+        self.cfg = Config.from_file(path=config)
 
         # Conversion rates to the dest currency
         self._dst_currency_rates = self._get_currency_rates(self.cfg.currency.name)
@@ -56,14 +56,13 @@ class Project:
 
     def _get_currency_rates(self, currency: str) -> Dict[str, float]:
         cc = CurrencyConverter()
-        rates = {currency: 1.}
+        rates = {currency: 1.0}
         for cu in cc.currencies:
             try:
                 rates[cu] = cc.convert(1, currency, cu)
-            except:
+            except Exception:
                 pass
         return rates
-
 
     def _get_attrs_report_data(self, analysis: Analysis, allocations: pd.DataFrame):
         reports = {}

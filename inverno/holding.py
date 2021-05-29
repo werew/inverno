@@ -5,7 +5,7 @@ from .transaction import Transaction
 class Holding:
     def __init__(
         self,
-        quantity: float,
+        quantity: Optional[float] = None,
         name: Optional[str] = None,
         ticker: Optional[str] = None,
         isin: Optional[str] = None,
