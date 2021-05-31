@@ -53,7 +53,7 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                          <div class="row">
+                                          <div class="row align-items-center">
                                             <div class="col-auto" style="padding-right: 0">
                                               <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Balance
@@ -82,7 +82,7 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                          <div class="row">
+                                          <div class="row align-items-center">
                                             <div class="col-auto" style="padding-right: 0">
                                               <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Earnings ({{cfg.days}} days)
@@ -111,7 +111,7 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                          <div class="row">
+                                          <div class="row align-items-center">
                                             <div class="col-auto" style="padding-right: 0">
                                               <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Rate of return ({{cfg.days}} days)
@@ -156,7 +156,7 @@
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                          <div class="row">
+                                          <div class="row align-items-center">
                                             <div class="col-auto" style="padding-right: 0">
                                               <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Number of holdings
@@ -288,101 +288,8 @@
                     <script>balances = {{balances | tojson}}</script>
 
                     <!-- Attributes -->
-
-                    <script>
-                      piecharts = {}
-                      areacharts = {}
-                      areacharts_stacked = {}
-                    </script>
-                    {% for attr, reports in attrs %}
-
-                    <!-- Content Row -->
-                        <div class="row">
-                            <div class="col-lg-12 mt-4 mb-1">
-                                <div class="card bg-primary text-white shadow">
-                                  <div class="card-body">
-                                    <div class="row">
-                                      <div class="col-auto" style="padding-right: 0">
-                                          <h4>{{attr.capitalize()}}</h4>
-                                      </div>
-                                      <div class="col-auto">
-                                        <i class="fas fa-info-circle text-gray-300"
-                                          data-bs-toggle="tooltip"
-                                          data-bs-placement="top"
-                                          style="vertical-align: bottom"
-                                          title="
-                                          Reports for attribute {{attr}}.
-                                          "></i>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                        {% for report in reports %}
-                            <div class="col-xl-4 col-lg-5">
-                                <div class="card shadow mb-4">
-                                    <!-- Card Header - Dropdown -->
-                                    <div
-                                        class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                      <div class="row">
-                                          <div class="col-auto" style="padding-right: 0">
-                                              <h6 class="m-0 font-weight-bold text-primary">{{report["name"]}}</h6>
-                                          </div>
-                                          <div class="col-auto">
-                                            <i class="fas fa-info-circle text-gray-300"
-                                              data-bs-toggle="tooltip"
-                                              data-bs-placement="top"
-                                              title="{{report['help']}}"
-                                              ></i>
-                                          </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <!-- Card Body -->
-                                    <div class="card-body" style="height: 500px">
-                                    {% if report["type"] == "video" %}
-
-                                        <video style="width: 100%; height: 100%;" controls="controls">
-                                            <source src="{{report['src']}}" type="video/mp4">
-                                        </video>
-
-                                    {% elif report["type"] == "piechart" %}
-                                     
-                                        {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
-                                        <div class="chart-pie pt-4" style="width: 100%; height: 90%">
-                                            <canvas id="{{chart_id}}"></canvas>
-                                        </div>
-                                        <script>piecharts[{{chart_id | tojson}}] = {{report | tojson}}</script>
-
-                                    {% elif report["type"] == "areachart" %}
-                                     
-                                        {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
-                                        <div class="chart-area pt-4" style="width: 100%; height: 90%">
-                                            <canvas id="{{chart_id}}"></canvas>
-                                        </div>
-                                        <script>areacharts[{{chart_id | tojson}}] = {{report | tojson}}</script>
-
-                                    {% elif report["type"] == "areachart_stacked" %}
-                                     
-                                        {% set chart_id = attr+'_'+report['type']+'_'+report['name'] %}
-                                        <div class="chart-area pt-4" style="width: 100%; height: 90%">
-                                            <canvas id="{{chart_id}}"></canvas>
-                                        </div>
-                                        <script>areacharts_stacked[{{chart_id | tojson}}] = {{report | tojson}}</script>
-
-                                    {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-
-                        </div>
-                    <!-- End Content Row -->
-
-                    {% endfor %}
+                    <div id="reports"></div>
+                    <script>reports_data = {{attrs | tojson}}</script>
 
 
 
@@ -419,6 +326,10 @@
             </div>
         </div>
     </div>
+
+    <!-- React -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>  
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
 
     <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>

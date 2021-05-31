@@ -65,10 +65,10 @@ class Project:
         return rates
 
     def _get_attrs_report_data(self, analysis: Analysis, allocations: pd.DataFrame):
-        reports = {}
+        reports = []
         for attr in self._meta:
             log_info(f"Generating report for attribute {attr}")
-            reports[attr] = []
+            reports.append({"name": attr.capitalize(), "reports": []})
 
             attr_alloc = analysis.get_attr_allocations(
                 allocations=allocations, attr_weights=self._meta[attr]
@@ -76,7 +76,7 @@ class Project:
 
             # Get current allocation from last (more recent) row
             last_alloc = attr_alloc.tail(1).values.tolist()[0]
-            reports[attr].append(
+            reports[-1]["reports"].append(
                 {
                     "type": "piechart",
                     "name": "Allocation",
@@ -87,7 +87,7 @@ class Project:
             )
 
             # Allocation history
-            reports[attr].append(
+            reports[-1]["reports"].append(
                 {
                     "type": "areachart_stacked",
                     "name": "Allocation history",
@@ -107,22 +107,44 @@ class Project:
                 transactions=self.cfg.transactions,
                 attr_weights=self._meta[attr],
             )
-            reports[attr].append(
+            earnings_perc = (earnings / attr_alloc) * 100
+            earnings_perc.replace([np.inf, -np.inf], np.nan, inplace=True)
+            earnings_perc = earnings_perc.fillna(0.0)
+
+            reports[-1]["reports"].append(
                 {
-                    "type": "areachart",
+                    "type": "multi",
                     "name": "Earnings",
-                    "datasets": [
-                        {"label": c, "data": earnings[c].tolist()}
-                        for c in earnings.columns
+                    "help": "Earnings growth for each type adjusted for cash flow.",
+                    "reports": [
+                        {
+                            "type": "areachart",
+                            "name": "Value",
+                            "datasets": [
+                                {"label": c, "data": earnings[c].tolist()}
+                                for c in earnings.columns
+                            ],
+                            "labels": [d.strftime("%d %b %Y") for d in earnings.index],
+                            "show_legend": True,
+                        },
+                        {
+                            "type": "areachart",
+                            "name": "Percentage (%)",
+                            "datasets": [
+                                {"label": c, "data": earnings_perc[c].tolist()}
+                                for c in earnings_perc.columns
+                            ],
+                            "labels": [
+                                d.strftime("%d %b %Y") for d in earnings_perc.index
+                            ],
+                            "show_legend": True,
+                            "format": "percent",
+                        },
                     ],
-                    "labels": [d.strftime("%d %b %Y") for d in earnings.index],
-                    "show_legend": True,
-                    "help": "Shows value growth for each type independently.",
                 }
             )
 
-        # Place holdings first
-        return [("holdings", reports.pop("holdings"))] + list(reports.items())
+        return sorted(reports, key=lambda r: r["name"].lower() != "holdings")
 
     def _get_report_data(self):
         analysis = Analysis(
