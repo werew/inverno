@@ -5,7 +5,7 @@ from .project import Project
 def main():
     pass
 
-@main.command("make_report")
+@main.command("gen-report")
 @click.argument("config")
 @click.argument("dest")
 def make_report(config: str, dest: str):
