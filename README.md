@@ -11,3 +11,6 @@ You can see an example report [here](https://ret2libc.com/static/inverno_report/
 ## Documentation 📚
 
 - [Installation](https://github.com/werew/inverno/blob/main/docs/installation.md#installation-)
+- [Tutorial](https://github.com/werew/inverno/blob/main/docs/tutorial.md#tutorial-)
+- [Configuration](https://github.com/werew/inverno/blob/main/docs/tutorial.md#tutorial-)
+- [FAQ](https://github.com/werew/inverno/blob/main/docs/faq.md#frequently-asked-questions-%EF%B8%8F)
