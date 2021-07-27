@@ -1,3 +1,5 @@
+import os
+from shutil import copyfile
 import click
 from .project import Project
 
@@ -14,3 +16,19 @@ def make_report(config: str, dest: str):
     """
     proj = Project(config=config)
     proj.gen_report(dest)
+
+@main.command("new-project")
+@click.argument("dest")
+def new_project(dest: str):
+    """
+    Generate a template for a new project
+    """
+    src = os.path.join(os.path.dirname(__file__), "project_template")
+    files = ["project.yml", "transactions.csv"]
+    for f in files:
+        copyfile(os.path.join(src,f), os.path.join(dest,f))
+    click.echo("New project created !")
+    click.echo("To generate a report run:")
+    click.echo("  inverno gen-report project.yml DEST")
+
+    
