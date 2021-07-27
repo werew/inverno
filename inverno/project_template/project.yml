@@ -1,0 +1,94 @@
+# My project
+
+
+# Use this section to specify global settings for the project. 
+# This section is not required. Omitted fields will use default values.
+
+#options:
+#  title: My Portfolio        # Name of the project
+#  days: 90                   # Show last N days (default it 90)
+#  end_date: 25/04/21         # Do not process investments beyond this date (defaults to today)
+#  currency: USD              # Convert everything to this currency (default USD)
+
+
+
+# Each project must provide a list of transactions.
+# Transactions are used to determine balance and holdings through time.
+# You can provide multiple lists of transactions, they will
+# be merged and used together.
+#
+# For each transactions list you must specify the format and the file 
+# containing the transactions.
+# Available formats are: standard and schwab.
+
+transactions:
+  - format: standard           # Transactions format (available formats: standard, schwab)
+    file: transactions.csv     # Transactions file
+#  - format: schwabs           # Add as many additional transactions files as you want
+#    file: transactions.csv    
+
+
+
+# Inverno uses several strategies to determine the prices of your 
+# holdings (e.g. try fetching them from Yahoo Finance or estimate them 
+# form transactions prices).
+# Sometime (especially when prices are not available on Yahoo Finance) 
+# the strategy to estimate holding prices can lack of precision.
+# So you are given the possibility to provide your own price data which,
+# if present, is always preferred.
+#
+# Each entry must have a match section, matching the holding by name or
+# ticker, and a specify file where the price data is stored
+
+#prices:                      
+#    - match:                     
+#        name: Holding          # Match holding by its name
+#      file: prices.csv         # File containing the prices of this holding
+
+
+
+# You can provide meta attributes for your holdings. For example,
+# you can specify the sector or industry of an holding or, basically
+# anything.
+#
+# Each meta entry must have a match section matching the holding
+# by name or ticker and an apply section used to specify 
+# the attributes for that holding.
+# Each attribute in the apply section can be specified in two ways.
+# As a single value:
+#
+#   <attribute>: <value>
+# 
+# As a combination of values:
+#
+#   <attribute>: 
+#       <value 1>: <percentage>
+#       <value 2>: <percentage>
+#       ...
+#
+# Specifying an attribute as a single value is equivalent to:
+#
+#   <attribute>: 
+#       <value>: 100%
+#
+# If percentages don't sum up to 100% the remaining portion of the
+# holding is considered "unknown" for that specific attribute.
+# Similarly, holding which do now specify an attribute are considered
+# "unknown" for that attribute.
+#
+# Attributes can be anything (i.e. you can put anything you want in
+# <attribute>).
+ 
+
+
+#meta:
+#  - match:
+#      ticker: FB                       # Match holding by its ticker
+#    apply:
+#      sector: Communication Services   # Set attribute "sector" to "Communication Services"
+#  - match:
+#      name: My Fund                    # Match holding by its name
+#    apply:
+#      sector:                          # Set attribute "sector" to be 20% "Information Technology", 10% "Communication Services" and 70% unknown
+#          Information Technology: 20%
+#          Communication Services: 10%

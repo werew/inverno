@@ -1,0 +1,6 @@
+date,action,name,ticker,isin,quantity,price,fees,amount
+10/02/21,cash_in,,,,,,,"$4,000.00"
+12/02/21,buy,,FB,,4,$270.52,,
+15/02/21,cash_in,,,,,,,"£2,000.00"
+18/02/21,buy,,GOOGL,,1,"$2,105.81",,
+22/02/21,buy,,AAPL,,7,$126.00,,
