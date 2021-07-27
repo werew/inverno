@@ -2,7 +2,7 @@
 
 
 # Options let you specify global settings for the project. 
-# This section is optinal. If omitted default values are used.
+# This section is optional. If omitted default values are used.
 options:
   title: Example Project  # Name of the project
   days: 90                # Show last N days
@@ -23,7 +23,7 @@ transactions:
 
 # Inverno uses several strategies to determine the prices of your 
 # holdings (e.g. try fetching them from Yahoo Finance or estimate them 
-# from transactions data).
+# from transactions prices).
 # Sometime (especially when prices are not available on Yahoo Finance) 
 # the strategy to estimate holding prices can lack of precision.
 # So you are given the possibility to provide your own price data which,
@@ -55,7 +55,7 @@ prices:
 #       <value 2>: <percentage>
 #       ...
 #
-# Specifing an attribute as a single value is equivalent to:
+# Specifying an attribute as a single value is equivalent to:
 #
 #   <attribute>: 
 #       <value>: 100%
