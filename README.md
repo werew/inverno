@@ -5,7 +5,7 @@ Inverno is a flexible investments portfolio tracker.
 
 ## How it works ⁉️
 
-Inverno takes a config file as input and generates an html report. You just have to provide information about transactions, Inverno takes care of the rest.
+Inverno takes a config file as input and generates an html report. You provide information about transactions, Inverno takes care of the rest.
 If you are interested in seeing how your investments are distributed over a certain area (e.g. industry, geo, etc.) Inverno lets you also do that for any area of interest you can think of.
 
 See an example report [here](https://ret2libc.com/static/inverno_report/).
