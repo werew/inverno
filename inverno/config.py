@@ -4,6 +4,7 @@ Config
 
 from typing import List, Dict, Optional, Generator, Any
 from collections import defaultdict
+import os
 import csv
 from datetime import datetime
 import yaml
@@ -18,18 +19,19 @@ from .holding import Holding
 class Config:
     """ Utility class representing a yaml project config """
 
-    def __init__(self, cfg: str):
+    def __init__(self, cfg: str, path=None):
         self._cfg = yaml.load(cfg, Loader=yaml.SafeLoader)
         self._transactions = None
         self._prices = None
         self._holding_to_currency = {}
         self._files_provided = {}
+        self._path = path
 
     @staticmethod
     def from_file(path: str):
         """ Create Config object from file """
         with open(path) as fd:
-            return Config(cfg=fd.read())
+            return Config(cfg=fd.read(), path=path)
 
     def provide_file(self, path: str, content: str):
         """
@@ -41,6 +43,9 @@ class Config:
         self._files_provided[path] = content
 
     def _read_file(self, path: str) -> str:
+        if not os.path.isabs(path) and self._path is not None:
+            path = os.path.join(os.path.dirname(self._path), path)
+
         if path in self._files_provided:
             return self._files_provided[path]
         with open(path) as fd:
