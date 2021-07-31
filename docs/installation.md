@@ -1,6 +1,6 @@
 # Installation ✨
 
-## Install from PyPI
+## Install from PyPI (recommended)
 
 To install from PyPI simply run:
 ```
