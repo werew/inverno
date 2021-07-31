@@ -35,5 +35,5 @@ inverno gen-report myproject/project.yml myproject/report
 
 - [Installation](https://github.com/werew/inverno/blob/main/docs/installation.md#installation-)
 - [Tutorial](https://github.com/werew/inverno/blob/main/docs/tutorial.md#tutorial-)
-- [Configuration](https://github.com/werew/inverno/blob/main/docs/tutorial.md#tutorial-)
+- [Configuration](https://github.com/werew/inverno/blob/main/docs/config.md#configuration-)
 - [FAQ](https://github.com/werew/inverno/blob/main/docs/faq.md#frequently-asked-questions-%EF%B8%8F)
