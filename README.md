@@ -16,10 +16,18 @@ For more info on how to use Inverno please refer to the docs here below.
 
 ## Try it now 🔥
 
+Install Inverno from PyPi:
 ```sh
 pip install inverno
-mkdir myproject
-inverno new-project myproject
+```
+
+Create a new project:
+```sh
+mkdir myproject && inverno new-project myproject
+```
+
+Generate a report:
+```sh
 inverno gen-report myproject/project.yml myproject/report
 ```
 
