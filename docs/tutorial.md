@@ -1,3 +1,4 @@
+
 # Tutorial 🧑‍🏫
 
 This tutorial walks you through creating and configuring a new Inverno portfolio from scratch.
@@ -6,7 +7,7 @@ This tutorial walks you through creating and configuring a new Inverno portfolio
 
 If you haven't yet installed Inverno, follow the steps [here](https://github.com/werew/inverno/blob/main/docs/installation.md#installation-) to install it.
 
-## Create a new project
+## Creating a new project 📰
 
 After installing Inverno, you should have get a new command named `inverno`, try typing it in your terminal of choice:
 
@@ -69,3 +70,15 @@ css  index.html  js  media  node_modules  package.json  package-lock.json  vendo
 ```
 
 To view it, simply open the `index.html` file using your browser of choice.
+You should see something similar to this:
+
+<img src="https://user-images.githubusercontent.com/10875013/127753180-71dc4f64-decb-4caf-98fa-86606ddd226b.png" alt="drawing" width="40%"/>
+
+
+## Transactions
+
+## Prices
+
+## Configure Options
+
+## Add Metadata
