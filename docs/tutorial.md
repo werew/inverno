@@ -123,10 +123,33 @@ Your transactions file will have the following columns:
 - **amount**: (either price or amount are needed for buy/sell transactions) total cash amount of the transaction price at the moment of the purchase/sale, corresponds to the price multiplied by the quantity (e.g. $424.2)
 - **fees**: (optional) transaction costs (e.g. $2.4)
 
-Once again, here is an example of transactions:
+Once again, here is an example of transactions: 
+
 ![https://imgur.com/UtBQ3Td.png](https://imgur.com/UtBQ3Td.png)
 
-## Configuring Prices
+## Configuring Prices 💰
+
+Inverno will try to fetch prices from Yahoo Finance. If prices of an holding are not available on Yahoo Finance, Inverno will try to estimate them based on the transactions (by interpolating the prices you have provided in the transactions). 
+This last method isn't very precise (and might not be possible if there are too few transactions). In such cases you might want to provide the prices on your own. 
+
+You can specify a prices file for one or more holdings as follows: 
+
+```yml
+prices:
+    - match:
+        name: My Fund
+      file: my_fund_prices.csv
+    - match:
+        ticker: FB
+      file: fb_prices.csv
+```
+
+The `match` section lets you specify the holding by name, ticker or ISIN.
+
+Prices must be provided as CSV files with ***date*** and ***price*** columns, where each row represents the price for that day:
+
+[![https://imgur.com/CPMov9k.png](https://imgur.com/CPMov9k.png)](https://imgur.com/CPMov9k.png)
+
 
 ## Configuring Options
 
