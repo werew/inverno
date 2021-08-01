@@ -3,6 +3,16 @@
 
 This tutorial walks you through creating and configuring a new Inverno portfolio from scratch.
 
+**Index**
+- [Installation](https://github.com/werew/inverno/blob/main/docs/tutorial.md#installation-)
+- [Creating a new project](https://github.com/werew/inverno/blob/main/docs/tutorial.md#creating-a-new-project-)
+- [Configuring transactions](https://github.com/werew/inverno/blob/main/docs/tutorial.md#configuring-transactions-)
+- [Configuring prices](https://github.com/werew/inverno/blob/main/docs/tutorial.md#configuring-prices-)
+- [Configuring options](https://github.com/werew/inverno/blob/main/docs/tutorial.md#configuring-options-%EF%B8%8F)
+- [Adding metadata](https://github.com/werew/inverno/blob/main/docs/tutorial.md#adding-metadata-)
+   - [Multiple values](https://github.com/werew/inverno/blob/main/docs/tutorial.md#multiple-values)
+   - [Nested metadata](https://github.com/werew/inverno/blob/main/docs/tutorial.md#nested-metadata)
+
 ## Installation ✨
 
 If you haven't yet installed Inverno, follow the steps [here](https://github.com/werew/inverno/blob/main/docs/installation.md#installation-) to install it.
@@ -206,7 +216,7 @@ As a result we will get a new *sector* section in our report, showing how our ho
 Notice that holdings for which we haven't specified any sector are left as "unkown". 
 Using the same technique we could specify attributes for anything of interest: company cap, ratings, location, etc.
 
-### Multiple values for an attribute
+### Multiple values
 
 Sometime an holding may extend over multiple sectors, this is common for mutual funds, ETFs, etc. 
 Inverno let's you specify multiple values for an attribute: 
