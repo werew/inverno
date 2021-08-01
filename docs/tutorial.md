@@ -1,9 +1,9 @@
 
 # Tutorial 🧑‍🏫
 
-This tutorial walks you through creating and configuring a new Inverno portfolio from scratch.
+This tutorial will walk you through creating and configuring a new Inverno portfolio from scratch.
 
-**Index**
+**Index:**
 - [Installation](https://github.com/werew/inverno/blob/main/docs/tutorial.md#installation-)
 - [Creating a new project](https://github.com/werew/inverno/blob/main/docs/tutorial.md#creating-a-new-project-)
 - [Configuring transactions](https://github.com/werew/inverno/blob/main/docs/tutorial.md#configuring-transactions-)
@@ -19,7 +19,7 @@ If you haven't yet installed Inverno, follow the steps [here](https://github.com
 
 ## Creating a new project 📰
 
-After installing Inverno, you should have get a new command named `inverno`, try typing it in your terminal of choice:
+After installing Inverno, you should get a new command named `inverno`, try typing it in your terminal of choice:
 
 ```sh
 $ inverno --help
@@ -125,13 +125,13 @@ Your transactions file will have the following columns:
   - *vest*: for [vesting](https://www.investopedia.com/terms/v/vesting.asp) events (e.g. from [RSU](https://www.investopedia.com/terms/r/restricted-stock-unit.asp)) 
   - *dividends*: for dividends payed by an holding
   - *split*: for [stock split](https://www.investopedia.com/terms/s/stocksplit.asp) events
-- **name**: (optional) name of the holding, can be anything (e.g. Google, Facebook, MyFund, etc.)
-- **ticker**: (optional) ticker of the holding, if applicable (e.g. GOOGL, FB, etc.)
-- **isin**: (optional) [ISIN](https://www.investopedia.com/terms/i/isin.asp) of the holding, if applicable (e.g. US38259P7069)
-- **quantity**: (needed for buy/sell/vest transactions) number of holdings purchased/sold/vested (e.g. 3.5)
-- **price**: (either price or amount are needed for buy/sell transactions) holding price at the moment of the purchase/sale, corresponds to the price multiplied by the quantity (e.g. $102.2)
-- **amount**: (either price or amount are needed for buy/sell transactions) total cash amount of the transaction price at the moment of the purchase/sale, corresponds to the price multiplied by the quantity (e.g. $424.2)
-- **fees**: (optional) transaction costs (e.g. $2.4)
+- **name**: *(optional)* name of the holding, can be anything (e.g. Google, Facebook, MyFund, etc.)
+- **ticker**: *(optional)* ticker of the holding, if applicable (e.g. GOOGL, FB, etc.)
+- **isin**: *(optional)* [ISIN](https://www.investopedia.com/terms/i/isin.asp) of the holding, if applicable (e.g. US38259P7069)
+- **quantity**: *(needed for buy/sell/vest transactions)* number of holdings purchased/sold/vested (e.g. 3.5)
+- **price**: *(either price or amount are needed for buy/sell transactions)* holding price at the moment of the purchase/sale, corresponds to the price multiplied by the quantity (e.g. $102.2)
+- **amount**: *(either price or amount are needed for buy/sell transactions)* total cash amount of the transaction price at the moment of the purchase/sale, corresponds to the price multiplied by the quantity (e.g. $424.2)
+- **fees**: *(optional)* transaction costs (e.g. $2.4)
 
 Once again, here is an example of transactions: 
 
