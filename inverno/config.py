@@ -422,4 +422,5 @@ class Config:
             else:
                 raise ValueError(f"Unsupported transactions' format {loader}")
 
+        transactions = filter(lambda trs: trs.date <= self.end_date, transactions)
         return list(sorted(transactions, key=lambda trs: trs.date))
