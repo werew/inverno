@@ -71,7 +71,7 @@ class Project:
             reports.append({"name": attr.capitalize(), "reports": []})
 
             attr_alloc = analysis.get_attr_allocations(
-                allocations=allocations, attr_weights=self._meta[attr]
+                allocations=allocations, attr=attr, attr_weights=self._meta[attr],
             )
 
             # Get current allocation from last (more recent) row

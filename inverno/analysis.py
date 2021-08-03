@@ -161,7 +161,7 @@ class Analysis:
         return ret - 1
 
     def get_attr_allocations(
-        self, allocations: pd.DataFrame, attr_weights: Dict[str, Dict[str, float]]
+        self, allocations: pd.DataFrame, attr: str, attr_weights: Dict[str, Dict[str, float]]
     ) -> pd.DataFrame:
         """
         Creates an allocations dataframe for a given meta attribute, where each
@@ -208,7 +208,7 @@ class Analysis:
 
             if allocation > 1 + eps:
                 raise ValueError(
-                    f"Found an attribute with more than 100% "
+                    f"Attribute \"{attr}\" has more than 100% "
                     f"allocation for {holding_key}"
                 )
 

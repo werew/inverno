@@ -209,7 +209,7 @@ def test_attrs_allocations(analysis_data):
     balances = Balance.get_balances(transactions=transactions)
     allocations = analysis.get_allocations(balances=balances.values())
     attrs_alloc = analysis.get_attr_allocations(
-        allocations=allocations, attr_weights=attr_weights
+        allocations=allocations, attr="Test", attr_weights=attr_weights
     )
     df = pd.DataFrame(
         columns=list(attr_weights.keys()) + ["unknown"],
@@ -231,7 +231,7 @@ def test_attrs_earnings(analysis_data):
         balances = Balance.get_balances(transactions=transactions)
         allocations = analysis.get_allocations(balances=balances.values())
         attrs_alloc = analysis.get_attr_allocations(
-            allocations=allocations, attr_weights=attr_weights
+            allocations=allocations, attr="Test", attr_weights=attr_weights
         )
         return analysis.get_attr_earnings(
             attr_allocations=attrs_alloc,
