@@ -1,0 +1,232 @@
+meta:
+  # https://www.vanguardinvestor.co.uk/investments/vanguard-lifestrategy-80-equity-fund-accumulation-shares/portfolio-data?intcmpgn=blendedlifestrategy_lifestrategy80equityfund_fund_link
+  - match:
+      name: LifeStrategy® 80% Equity Fund - Accumulation
+    apply:
+      type:
+        equity: 80%
+        bonds: 20%
+    composition:
+      name:
+        U.S. Equity Index Fund GBP Acc:  19.37%
+        FTSE U.K. All Share Index Unit Trust GBP Acc:  19.27%
+        FTSE Developed World ex-U.K. Equity Index Fund GBP Acc:  19.26%
+        Global Bond Index Fund GBP Hedged Acc: 14.01%
+        Emerging Markets Stock Index Fund - Accumulation: 6.96%
+        FTSE Developed Europe ex-U.K. Equity Index Fund GBP Acc: 5.42%
+        S&P 500 UCITS ETF (USD) Accumulating:  4.61%
+        Japan Stock Index Fund GBP Acc:  2.80%
+        U.K. Government Bond Index Fund GBP Acc: 2.49%
+        U.K. Inflation-Linked Gilt Index Fund GBP Acc: 1.89%
+        U.K. Investment Grade Bond Index Fund GBP Acc: 1.60%
+        Pacific ex-Japan Stock Index Fund GBP Acc: 1.46%
+        FTSE 100 UCITS ETF (GBP) Distributing: 0.79%
+        FTSE 250 UCITS ETF (GBP) Distributing: 0.07%
+        U.K. Gilt UCITS ETF (GBP) Distributing:  0.01% 
+
+  # https://www.vanguard.co.uk/professional/product/mf/equity/9214/ftse-developed-europe-ex-uk-equity-index-fund-gbp-acc#portfolio-data
+  - match:
+      name: FTSE Developed Europe ex-U.K. Equity Index Fund GBP Acc
+    apply:
+      type: equity
+      cap:
+        large: 84.41%
+        medium/large: 3.81%
+        medium: 10.01%
+        medium/small: 0.50% 
+      region:
+        Europe: 100%
+      sector:
+        Industrials: 17.80%
+        Financials: 15.90%
+        Health Care: 15.00%
+        Consumer Discretionary: 13.90%
+        Consumer Staples: 9.20%
+        Technology: 9.00%
+        Basic Materials: 5.30%
+        Utilities: 4.60%
+        Energy: 3.80%
+        Telecommunications: 3.50%
+        Real Estate: 1.90%
+        Other: 0.10% 
+
+  # https://www.vanguard.co.uk/professional/product/mf/bond/9142/global-bond-index-fund-gbp-hedged-acc#portfolio-data
+  - match:
+      name: Global Bond Index Fund GBP Hedged Acc
+    apply:
+      type: bonds
+      region:
+        US: 44.60%
+        Europe: 32.80%
+        Pacific: 13.80%
+        Emerging Markets: 5.20%
+        Other: 3.40%
+        Middle East: 0.20%
+      credit rating:
+        AAA: 40.40%
+        AA:  16.00%
+        A: 22.40% 
+        BBB: 19.20%
+        Not Rated: 2.00% 
+      credit issuer:
+        Treasury/Federal: 51.60%
+        Corporate-Industrial: 12.00%
+        Mortgage Backed Security Pass-through: 8.60%
+        Financial Institutions: 8.10%
+        Agencies: 5.30%
+        Local Authority: 3.30%
+        Supranational: 2.60%
+        Asset Backed Security: 2.50%
+        Utilities: 2.00%
+        Sovereign: 1.70%
+        Cash: 1.10%
+        Commercial Mortgage Backed Security: 0.90%
+        Provincials/Municipals: 0.30%
+      credit maturity:
+        Under 1 Year: 2.40%
+        1 to 5 Years: 41.90%
+        5 to 10 Years: 29.60%
+        10 to 15 Years: 6.00%
+        15 to 20 Years: 6.30%
+        20 to 25 Years: 4.90%
+        Over 25 Years: 8.90%
+
+  # https://www.vanguard.co.uk/professional/product/mf/equity/9218/us-equity-index-fund-gbp-acc#portfolio-data
+  - match:
+      name: U.S. Equity Index Fund GBP Acc
+    apply:
+      type: equity
+      region:
+        US: 99.6%
+      cap:
+        large: 67.80%
+        medium/large: 3.94%
+        medium: 14.47%
+        medium/small: 6.04%
+        small: 7.75%
+      sector:
+        Information Technology: 25.70%
+        Health Care: 13.30%
+        Consumer Discretionary: 12.50%
+        Financials: 11.90%
+        Communication Services: 10.20%
+        Industrials: 9.60%
+        Consumer Staples: 5.40%
+        Real Estate: 3.30%
+        Materials: 2.90%
+        Utilities: 2.50%
+        Energy: 2.50%
+
+  # https://www.vanguard.co.uk/professional/product/mf/equity/9156/ftse-uk-all-share-index-unit-trust-gbp-acc#portfolio-data
+  - match:
+      name: FTSE U.K. All Share Index Unit Trust GBP Acc
+    apply:
+      type: equity
+      region:
+        Europe: 100%
+      cap:
+        large: 63.63%
+        medium/large:  6.22%
+        medium:  13.40%
+        medium/small:  6.25% 
+        small: 10.50%
+      sector:
+        Financials:  23.40%  
+        Consumer Staples:  15.30%
+        Consumer Discretionary:  12.80%
+        Industrials: 12.70%
+        Basic Materials: 9.60%
+        Health Care: 8.60%
+        Energy:  7.20%
+        Utilities: 3.00%
+        Real Estate: 3.00%
+        Telecommunications: 2.40%
+        Technology:  1.90% 
+
+  # https://www.vanguard.co.uk/professional/product/mf/equity/9210/ftse-developed-world-ex-uk-equity-index-fund-gbp-acc#portfolio-data
+  - match:
+      name: FTSE Developed World ex-U.K. Equity Index Fund GBP Acc
+    apply:
+      type: equity
+      region:
+        US: 70.40%
+        Europe:  15.30%
+        Pacific: 14.10%
+        Middle East: 0.20%
+      cap:
+        large: 79.87%
+        medium/large: 4.50%
+        medium: 11.79%
+        medium/small: 2.27%
+        small: 1.36% 
+      sector:
+        Technology: 22.80%
+        Consumer Discretionary: 15.90%
+        Industrials: 14.70%
+        Financials: 13.40%
+        Health Care: 11.90%
+        Consumer Staples: 5.60%
+        Basic Materials: 3.50% 
+        Telecommunications: 3.50% 
+        Utilities: 3.00%
+        Energy: 2.90%
+        Real Estate: 2.90% 
+
+  # https://www.vanguard.co.uk/professional/product/mf/equity/8617/ftse-global-all-cap-index-fund-gbp-acc#portfolio-data
+  - match:
+      name: FTSE Global All Cap Index Fund Accumulation
+    apply:
+      type: equity
+      cap:
+        large: 67.98%
+        medium/large: 4.13%
+        medium: 14.07%
+        medium/small: 6.46%
+        small: 7.20% 
+      region:
+        US: 60.60%
+        Europe: 16.80%
+        Pacific: 11.60%
+        Emerging Markets: 10.70%
+        Middle East: 0.20%
+        Other: 0.1%
+      sector:
+        Technology: 21.30%
+        Consumer Discretionary: 15.80%
+        Industrials: 14.20%
+        Financials: 14.10%
+        Health Care: 11.00%
+        Consumer Staples: 5.90%
+        Basic Materials: 4.50% 
+        Real Estate: 3.60%
+        Energy: 3.50%
+        Telecommunications: 3.20%
+        Utilities: 2.90%
+
+  # https://www.vanguardinvestor.co.uk/investments/vanguard-emerging-markets-stock-index-fund-gbp-acc/portfolio-data?intcmpgn=equityemerging%20markets_emergingmarketsstockindexfund_fund_link
+  - match:
+      name: Emerging Markets Stock Index Fund - Accumulation
+    apply:
+      type: equity
+      region:
+        Emerging Markets: 84.1%
+        Pacific: 13.4%
+        Europe: 0.8%
+      cap:
+        large: 73.04%
+        medium/large: 3.70%
+        medium: 16.95%
+        medium/small:  5.30%
+        small: 1.01%
+      sector:
+        Information Technology:  21.20%
+        Financials:  17.90%
+        Consumer Discretionary:  17.40%
+        Communication Services:  11.70% 
+        Materials: 8.50%
+        Consumer Staples:  5.50%
+        Health Care: 4.70%
+        Energy: 4.70%
+        Industrials: 4.40%
+        Real Estate: 2.00%
+        Utilities: 1.90%

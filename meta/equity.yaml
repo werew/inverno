@@ -1,0 +1,31 @@
+meta:
+  - match:
+      ticker: GOOGL
+    apply:
+      sector: Communication Services
+      cap: large
+      type: equity
+  - match:
+      ticker: AAPL
+    apply:
+      sector: Information Technology
+      cap: large
+      type: equity
+  - match:
+      ticker: MSFT 
+    apply:
+      sector: Information Technology
+      cap: large
+      type: equity
+  - match:
+      ticker: MSFT 
+    apply:
+      sector: Information Technology
+      cap: large
+      type: equity
+  - match:
+      ticker: MSFT 
+    apply:
+      sector: Information Technology
+      cap: large
+      type: equity
