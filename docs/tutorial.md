@@ -12,6 +12,8 @@ This tutorial will walk you through creating and configuring a new Inverno portf
 - [Adding metadata](https://github.com/werew/inverno/blob/main/docs/tutorial.md#adding-metadata-)
    - [Multiple values](https://github.com/werew/inverno/blob/main/docs/tutorial.md#multiple-values)
    - [Nested metadata](https://github.com/werew/inverno/blob/main/docs/tutorial.md#nested-metadata)
+- [Including configs](https://github.com/werew/inverno/blob/main/docs/tutorial.md#including-configs)
+
 
 ## Installation ✨
 
@@ -283,3 +285,14 @@ In this case composing holding are specified by name, it is also possible to spe
       
 If you specify an attribute in the `apply` section, this will have priority over the `composition`. This means that, in the example above, the type of *My Fund* will be always 100% equity regardless of the type of its sub-holdings.
 
+## Including configs 🧰
+
+Instead of having all of your project in a single config file, you can split it over multiple files and include them from your main config. 
+
+This is, for example, very handy for populating your meta entries:
+
+```yml
+include:
+ - inverno/meta/equity.yaml
+ - inverno/meta/vanguard.yml
+```
