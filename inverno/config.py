@@ -4,6 +4,7 @@ Config
 
 from typing import List, Dict, Optional, Generator, Any
 from collections import defaultdict
+from enum import Enum
 import os
 import csv
 from datetime import datetime
@@ -14,6 +15,14 @@ import dateutil.parser
 from .price import Price, Currency
 from .transaction import Transaction, TransactionAction
 from .holding import Holding
+
+class ConfKeys(Enum):
+    OPTIONS = "options"
+    PRICES = "prices"
+    META = "meta"
+    TRANSACTIONS = "transactions"
+    INCLUDE = "include"
+
 
 
 class Config:
@@ -27,11 +36,42 @@ class Config:
         self._files_provided = {}
         self._path = path
 
+        self._load_includes()
+
+    def _load_includes(self):
+        for path in (self._cfg.get(ConfKeys.INCLUDE.value) or []):
+            cfg_str = self._read_file(path=path)
+            cfg = Config(cfg=cfg_str, path=path)
+            self.merge(cfg=cfg)
+
     @staticmethod
     def from_file(path: str):
         """ Create Config object from file """
         with open(path) as fd:
             return Config(cfg=fd.read(), path=path)
+
+    def merge(self, cfg: "Config"):
+        self._cfg[ConfKeys.OPTIONS.value] = {
+            **(cfg._cfg.get(ConfKeys.OPTIONS.value) or {}),
+            **(self._cfg.get(ConfKeys.OPTIONS.value) or {}),
+        }
+
+        self._cfg[ConfKeys.META.value] = [
+            *(cfg._cfg.get(ConfKeys.META.value) or []),
+            *(self._cfg.get(ConfKeys.META.value) or []),
+        ]
+
+        self._cfg[ConfKeys.TRANSACTIONS.value] = [
+            *(cfg._cfg.get(ConfKeys.TRANSACTIONS.value) or []),
+            *(self._cfg.get(ConfKeys.TRANSACTIONS.value) or []),
+        ]
+
+        self._cfg[ConfKeys.PRICES.value] = [
+            *(cfg._cfg.get(ConfKeys.PRICES.value) or []),
+            *(self._cfg.get(ConfKeys.PRICES.value) or []),
+        ]
+
+
 
     def provide_file(self, path: str, content: str):
         """
@@ -53,8 +93,8 @@ class Config:
 
     def _get_opt(self, name: str) -> Any:
         opt = {}
-        if "options" in self._cfg:
-            opt = self._cfg["options"]
+        if ConfKeys.OPTIONS.value in self._cfg:
+            opt = self._cfg[ConfKeys.OPTIONS.value]
         return opt.get(name)
 
     @property
