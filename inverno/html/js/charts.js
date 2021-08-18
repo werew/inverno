@@ -208,7 +208,7 @@ function makeAreaChart(element_id, datasets, labels, config) {
 }
 
 makeAreaChart("balance_chart", balances["datasets"], balances["labels"], { is_stacked: true });
-makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], { is_stacked: true });
+makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], { show_legend: true, is_stacked: false });
 
 var AttrChart = function (_React$Component) {
   _inherits(AttrChart, _React$Component);

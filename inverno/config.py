@@ -7,7 +7,7 @@ from collections import defaultdict
 from enum import Enum
 import os
 import csv
-from datetime import datetime
+import datetime
 import yaml
 import pandas as pd
 import numpy as np
@@ -108,13 +108,18 @@ class Config:
         return self._get_opt("days") or 90
 
     @property
-    def end_date(self) -> datetime:
-        """ Number of days to analyse """
+    def end_date(self) -> datetime.datetime:
+        """ When to stop the analysis """
         date_opt = self._get_opt("end_date")
         if date_opt is None:
-            return datetime.now()
+            return datetime.datetime.now()
 
         return dateutil.parser.parse(date_opt, dayfirst=True)
+
+    @property
+    def start_date(self) -> datetime.datetime:
+        """ When to start the analysis """
+        return self.end_date - datetime.timedelta(days=self.days)
 
     @property
     def currency(self) -> Currency:
@@ -338,8 +343,8 @@ class Config:
     def get_prices(
         self,
         holding: Holding,
-        start: datetime,
-        end: Optional[datetime] = None,
+        start: datetime.datetime,
+        end: Optional[datetime.datetime] = None,
     ) -> Optional[pd.DataFrame]:
         """ Prices history for the given holding (if provided) """
 
@@ -376,7 +381,7 @@ class Config:
             # dates are sometime expressed as "mm/dd/yyyy as of mm/dd/yyy"
             # in which case we pick the first date
             date_str = row["Date"].split(" ")[0]
-            date = datetime.strptime(date_str, "%m/%d/%Y")
+            date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
 
             action = TransactionAction.from_schwab_action(row["Action"])
 

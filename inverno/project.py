@@ -173,12 +173,19 @@ class Project:
             transactions=self.cfg.transactions,
             ndays=self.cfg.days,
         )
+
+        benchmarks = self._get_benchmarks(
+            start=self.cfg.start_date,
+            end=self.cfg.end_date,
+        )
         earnings = {
             "datasets": [
                 {
                     "label": "Earnings",
                     "data": earnings_s.values.tolist(),
+
                 },
+                *[ { "label": k, "data": v.values.tolist()} for k,v in benchmarks.items() ]
             ],
             "labels": [d.strftime("%d %b %Y") for d in earnings_s.index],
         }
@@ -344,6 +351,43 @@ class Project:
             raise ValueError(f"Couldn't determine currency for {holding.get_key()}")
 
         return currencies
+
+    def _get_benchmarks(self, start: datetime, end: datetime):
+        def _reindex(s: pd.Series):
+            s = s.add(-s.iloc[0])
+            return s.reindex(
+                index=pd.date_range(s.index.min(), s.index.max()),
+                method="pad",
+            )
+
+        benchmarks = {}
+
+        # S&P 500
+        ticker = yf.Ticker("^GSPC")
+        prices = ticker.history(start=start, end=end, interval="1d")["Close"]
+        if prices.size > 0:
+            benchmarks["S&P 500"] = _reindex(prices)
+
+        # DJIA
+        ticker = yf.Ticker("^DJI")
+        prices = ticker.history(start=start, end=end, interval="1d")["Close"]
+        if prices.size > 0:
+            benchmarks["DJIA"] = _reindex(prices)
+            
+
+        # NASDAQ
+        ticker = yf.Ticker("^IXIC")
+        prices = ticker.history(start=start, end=end, interval="1d")["Close"]
+        if prices.size > 0:
+            benchmarks["NASDAQ"] = _reindex(prices)
+
+        # Russel 2000 
+        ticker = yf.Ticker("^RUT")
+        prices = ticker.history(start=start, end=end, interval="1d")["Close"]
+        if prices.size > 0:
+            benchmarks["Russell 2000"] = _reindex(prices)
+
+        return benchmarks
 
     def _get_holding_prices(
         self, start: datetime, end: datetime, holding: Holding

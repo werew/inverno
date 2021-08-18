@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "inverno"
-version = "0.1.1"
+version = "0.1.3"
 description = "Investments portfolio tracking tool"
 authors = ["werew <werew@ret2libc.com>"]
 

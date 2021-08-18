@@ -203,7 +203,7 @@ function makeAreaChart(element_id, datasets, labels, config) {
 
 
 makeAreaChart("balance_chart", balances["datasets"], balances["labels"], { is_stacked: true })
-makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], { is_stacked: true })
+makeAreaChart("earnings_chart", earnings["datasets"], earnings["labels"], { show_legend: true, is_stacked: false})
 
 class AttrChart extends React.Component {
   constructor(props) {
