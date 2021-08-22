@@ -17,7 +17,7 @@
         rel="stylesheet">
 
     <!-- Custom styles for this template-->
-    <link href="css/sb-admin-2.css" rel="stylesheet">
+    <link href="css/sb-admin-2.css" rel="stylesheet" id="theme-link">
 
 </head>
 
@@ -41,6 +41,13 @@
                     <div class="row">
                         <div class="mx-auto text-xs font-weight-bold text-primary text-uppercase mb-1">
                           <h1 style="margin-top: 25px;margin-bottom: 2.5rem;">{{cfg.title}}</h1>
+                        </div>
+                    <!-- Toggle Theme Button -->
+                        <div style="margin-top: 27px;margin-bottom: 2.5rem;">
+                            <label class="switch">
+                                <input type="checkbox" id="toggle" onclick="themeSwitch()">
+                                <span class="slider round"></span>
+                            </label>
                         </div>
                     </div>
 
@@ -326,6 +333,7 @@
             </div>
         </div>
     </div>
+    </div>
 
     <!-- React -->
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>  
@@ -344,6 +352,10 @@
     <!-- Charts -->
     <script src="vendor/chart.js/Chart.min.js"></script>
     <script src="js/charts.js"></script>
+
+    <!-- Theme Switch -->
+    <script src="js/theme-switch.js"></script>
+
 </body>
 
 </html>
