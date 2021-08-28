@@ -58,10 +58,6 @@ article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
   display: block;
 }
 
-#page-top {
-background-color: #121212;
-}
-
 body {
   margin: 0;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -561,7 +557,6 @@ pre code {
   padding-left: 0.75rem;
   margin-right: auto;
   margin-left: auto;
-  background-color: #121212;
 }
 
 @media (min-width: 576px) {
@@ -1498,12 +1493,12 @@ pre code {
 .table td {
   padding: 0.75rem;
   vertical-align: top;
-  border-top: 1px solid #5e5e5e;
+  border-top: 1px solid #e3e6f0;
 }
 
 .table thead th {
   vertical-align: bottom;
-  border-bottom: 2px solid #5e5e5e;
+  border-bottom: 2px solid #e3e6f0;
 }
 
 .table tbody + tbody {
@@ -3023,7 +3018,7 @@ input[type="button"].btn-block {
   color: #858796;
   text-align: left;
   list-style: none;
-  background-color: #171717;
+  background-color: #fff;
   background-clip: padding-box;
   border: 1px solid #e3e6f0;
   border-radius: 0.35rem;
@@ -3187,7 +3182,7 @@ input[type="button"].btn-block {
   padding: 0.25rem 1.5rem;
   clear: both;
   font-weight: 400;
-  color: #fff;
+  color: #3a3b45;
   text-align: inherit;
   white-space: nowrap;
   background-color: transparent;
@@ -4461,9 +4456,9 @@ input[type="button"].btn-block {
   flex-direction: column;
   min-width: 0;
   word-wrap: break-word;
-  background-color: #262626;
+  background-color: #fff;
   background-clip: border-box;
-  border: 1px solid #121212;
+  border: 1px solid #e3e6f0;
   border-radius: 0.35rem;
 }
 
@@ -4524,8 +4519,8 @@ input[type="button"].btn-block {
 .card-header {
   padding: 0.75rem 1.25rem;
   margin-bottom: 0;
-  background-color: #262626;
-  border-bottom: 1px solid #5e5e5e;
+  background-color: #f8f9fc;
+  border-bottom: 1px solid #e3e6f0;
 }
 
 .card-header:first-child {
@@ -5157,7 +5152,7 @@ a.badge-dark:focus, a.badge-dark.focus {
   overflow: hidden;
   line-height: 0;
   font-size: 0.75rem;
-  background-color: #5e5e5e;
+  background-color: #eaecf4;
   border-radius: 0.35rem;
 }
 
@@ -9765,7 +9760,7 @@ a:focus {
 }
 
 #wrapper #content-wrapper {
-  background-color: #121212;
+  background-color: #f8f9fc;
   width: 100%;
   overflow-x: hidden;
 }
@@ -9992,7 +9987,7 @@ a:focus {
 }
 
 .text-gray-800 {
-  color: #b7b7b !important;
+  color: #5a5c69 !important;
 }
 
 .text-gray-900 {
@@ -11261,6 +11256,7 @@ footer.sticky-footer .copyright {
 body.sidebar-toggled footer.sticky-footer {
   width: 100%;
 }
+
 .switch {
   position: relative;
   display: inline-block;
@@ -11297,7 +11293,8 @@ body.sidebar-toggled footer.sticky-footer {
   transition: .4s;
   font-family: "Font Awesome 5 Free";
   text-align: center;
-  content: "\f186";
+  content: "\f185";
+  color: #f6c70f;
   font-weight: 900;
 }
 
